@@ -14,3 +14,19 @@ export function databaseUrl(): string {
   }
   return url;
 }
+
+export function getDb(): Database {
+  if (!db) {
+    sql = postgres(databaseUrl(), { max: 8 });
+    db = drizzle(sql, { schema });
+  }
+  return db;
+}
+
+export async function closeDb(): Promise<void> {
+  if (sql) {
+    await sql.end({ timeout: 5 });
+    sql = undefined;
+    db = undefined;
+  }
+}
