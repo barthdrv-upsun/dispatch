@@ -16,3 +16,23 @@ export const users = pgTable('users', {
   email: text('email').notNull().unique(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * A user holds one role per squad. A physio is granted a row per squad they
+ * cover, which is how a single physio ends up working across squads.
+ */
+export const userRoles = pgTable(
+  'user_roles',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    squadId: uuid('squad_id')
+      .notNull()
+      .references(() => squads.id, { onDelete: 'cascade' }),
+    role: squadRole('role').notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.squadId, t.role] }),
+  }),
+);
