@@ -24,3 +24,19 @@ export type Actor = {
   /** Set when the caller is themselves an athlete in one of these squads. */
   athleteId?: string | null;
 };
+
+export function hasRoleInSquad(actor: Actor, squadId: string, role: Role): boolean {
+  return actor.grants.some((grant) => grant.squadId === squadId && grant.role === role);
+}
+
+export function hasRoleAnywhere(actor: Actor, role: Role): boolean {
+  return actor.grants.some((grant) => grant.role === role);
+}
+
+export function squadsWithRole(actor: Actor, role: Role): string[] {
+  return actor.grants.filter((grant) => grant.role === role).map((grant) => grant.squadId);
+}
+
+export function isSelf(actor: Actor, athleteId: string): boolean {
+  return actor.athleteId !== null && actor.athleteId !== undefined && actor.athleteId === athleteId;
+}
