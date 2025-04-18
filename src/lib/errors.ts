@@ -13,3 +13,18 @@ export abstract class AppError extends Error {
     return { error: this.code, message: this.message };
   }
 }
+
+export class ValidationError extends AppError {
+  readonly status = 400;
+  readonly code = 'invalid_request';
+  readonly details: unknown;
+
+  constructor(message: string, details?: unknown) {
+    super(message);
+    this.details = details;
+  }
+
+  override toBody(): ErrorBody {
+    return { error: this.code, message: this.message, details: this.details };
+  }
+}
