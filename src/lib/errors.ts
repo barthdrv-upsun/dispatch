@@ -38,3 +38,25 @@ export class ConflictError extends AppError {
   readonly status = 409;
   readonly code = 'conflict';
 }
+
+/**
+ * Raised by the route guards before any handler work happens. The body names
+ * the role the caller would have needed, because "forbidden" on its own sends
+ * coaches to the wrong person.
+ */
+export class ForbiddenError extends AppError {
+  readonly status = 403;
+  readonly code = 'forbidden';
+  readonly requiredRole: string;
+  readonly action: string;
+
+  constructor(action: string, requiredRole: string, message?: string) {
+    super(message ?? `${action} requires the ${requiredRole} role`);
+    this.action = action;
+    this.requiredRole = requiredRole;
+  }
+
+  override toBody(): ErrorBody {
+    return { error: this.code, message: this.message, requiredRole: this.requiredRole };
+  }
+}
