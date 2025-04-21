@@ -28,3 +28,13 @@ export class ValidationError extends AppError {
     return { error: this.code, message: this.message, details: this.details };
   }
 }
+
+export class NotFoundError extends AppError {
+  readonly status = 404;
+  readonly code = 'not_found';
+}
+
+export class ConflictError extends AppError {
+  readonly status = 409;
+  readonly code = 'conflict';
+}
