@@ -60,3 +60,12 @@ export class ForbiddenError extends AppError {
     return { error: this.code, message: this.message, requiredRole: this.requiredRole };
   }
 }
+
+export class UnauthenticatedError extends AppError {
+  readonly status = 401;
+  readonly code = 'unauthenticated';
+}
+
+export function isAppError(err: unknown): err is AppError {
+  return err instanceof AppError;
+}
