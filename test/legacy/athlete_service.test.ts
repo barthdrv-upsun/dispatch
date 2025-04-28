@@ -28,3 +28,36 @@ function row(overrides: Partial<AthleteRow> = {}): AthleteRow {
     ...overrides,
   };
 }
+
+function repo(rows: AthleteRow[]): AthleteRepository & { states: string[]; zones: string[] } {
+  const states: string[] = [];
+  const zones: string[] = [];
+  return {
+    states: states,
+    zones: zones,
+    byId: function (id, cb) {
+      cb(
+        null,
+        rows.filter(function (candidate) {
+          return candidate.id === id;
+        })[0],
+      );
+    },
+    bySquad: function (squadId, cb) {
+      cb(
+        null,
+        rows.filter(function (candidate) {
+          return candidate.squadId === squadId;
+        }),
+      );
+    },
+    updateState: function (_id, state, cb) {
+      states.push(state);
+      cb(null);
+    },
+    updateTimezone: function (_id, timezone, cb) {
+      zones.push(timezone);
+      cb(null);
+    },
+  };
+}
