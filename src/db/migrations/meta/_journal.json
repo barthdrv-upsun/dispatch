@@ -15,6 +15,13 @@
       "when": 1744105260000,
       "tag": "0001_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1746627720000,
+      "tag": "0002_goals",
+      "breakpoints": true
     }
   ]
 }
