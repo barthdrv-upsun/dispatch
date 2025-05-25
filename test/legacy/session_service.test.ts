@@ -52,3 +52,52 @@ function session(overrides: Partial<SessionRow> = {}): SessionRow {
     ...overrides,
   };
 }
+
+describe('SessionService.log', () => {
+  const yesterday = new Date(Date.now() - 26 * 60 * 60 * 1000);
+
+  it('writes a manual session', async () => {
+    const repository = repo();
+    const service = new SessionService(repository);
+    const { err, result } = await once<string>(function (cb) {
+      service.log({ athleteId: 'athlete-a', completedAt: yesterday, distanceM: 10_000, durationS: 3000 }, cb);
+    });
+    expect(err).toBeNull();
+    expect(result).toBe('session-1');
+    expect(repository.written[0]?.source).toBe('manual');
+  });
+
+  it('refuses a session with no athlete', async () => {
+    const service = new SessionService(repo());
+    const { err } = await once<string>(function (cb) {
+      service.log({ athleteId: '', completedAt: yesterday }, cb);
+    });
+    expect(err && err.message).toContain('needs an athlete');
+  });
+
+  it('refuses a session from the future', async () => {
+    const service = new SessionService(repo());
+    const { err } = await once<string>(function (cb) {
+      service.log({ athleteId: 'athlete-a', completedAt: new Date(Date.now() + 86_400_000) }, cb);
+    });
+    expect(err && err.message).toContain('cannot be logged in the future');
+  });
+
+  it('refuses figures out of range', async () => {
+    const service = new SessionService(repo());
+    const distance = await once<string>(function (cb) {
+      service.log({ athleteId: 'athlete-a', completedAt: yesterday, distanceM: 400_000 }, cb);
+    });
+    expect(distance.err && distance.err.message).toContain('distance is out of range');
+
+    const duration = await once<string>(function (cb) {
+      service.log({ athleteId: 'athlete-a', completedAt: yesterday, durationS: 90_000 }, cb);
+    });
+    expect(duration.err && duration.err.message).toContain('duration is out of range');
+
+    const effort = await once<string>(function (cb) {
+      service.log({ athleteId: 'athlete-a', completedAt: yesterday, perceivedEffort: 11 }, cb);
+    });
+    expect(effort.err && effort.err.message).toContain('perceived effort');
+  });
+});
