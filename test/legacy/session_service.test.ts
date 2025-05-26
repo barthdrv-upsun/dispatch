@@ -101,3 +101,28 @@ describe('SessionService.log', () => {
     expect(effort.err && effort.err.message).toContain('perceived effort');
   });
 });
+
+describe('SessionService.byLocalDay', () => {
+  it('groups by the athlete\'s own day', () => {
+    const service = new SessionService(repo());
+    const grouped = service.byLocalDay(athlete, [
+      session({ id: 'a', completedAt: new Date('2025-05-04T20:40:00Z') }),
+      session({ id: 'b', completedAt: new Date('2025-05-05T05:10:00Z') }),
+    ]);
+    expect(Object.keys(grouped).sort()).toEqual(['2025-05-04', '2025-05-05']);
+  });
+
+  it('puts two sessions on the same day together', () => {
+    const service = new SessionService(repo());
+    const grouped = service.byLocalDay(athlete, [
+      session({ id: 'a', completedAt: new Date('2025-05-04T05:10:00Z') }),
+      session({ id: 'b', completedAt: new Date('2025-05-04T16:10:00Z') }),
+    ]);
+    expect(grouped['2025-05-04']).toHaveLength(2);
+  });
+
+  it('skips a session that was never completed', () => {
+    const service = new SessionService(repo());
+    expect(service.byLocalDay(athlete, [session({ completedAt: null })])).toEqual({});
+  });
+});
