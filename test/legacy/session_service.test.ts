@@ -126,3 +126,15 @@ describe('SessionService.byLocalDay', () => {
     expect(service.byLocalDay(athlete, [session({ completedAt: null })])).toEqual({});
   });
 });
+
+describe('SessionService.weeklyDistanceM', () => {
+  it('adds up the distances', () => {
+    const service = new SessionService(repo());
+    expect(service.weeklyDistanceM([session(), session({ distanceM: 5000 })])).toBe(15_000);
+  });
+
+  it('ignores a session with no distance', () => {
+    const service = new SessionService(repo());
+    expect(service.weeklyDistanceM([session({ distanceM: null })])).toBe(0);
+  });
+});
