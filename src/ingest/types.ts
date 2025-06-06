@@ -13,3 +13,21 @@ export interface StravaTokenResponse {
   expires_at?: number;
   athlete?: { id?: number };
 }
+
+export interface StravaActivity {
+  id?: number;
+  name?: string;
+  type?: string;
+  sport_type?: string;
+  distance?: number;
+  moving_time?: number;
+  elapsed_time?: number;
+  start_date?: string;
+  start_date_local?: string;
+  timezone?: string;
+  average_heartrate?: number;
+  max_heartrate?: number;
+  perceived_exertion?: number;
+  manual?: boolean;
+  trainer?: boolean;
+}
