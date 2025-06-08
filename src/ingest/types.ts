@@ -31,3 +31,13 @@ export interface StravaActivity {
   manual?: boolean;
   trainer?: boolean;
 }
+
+export interface StravaWebhookEvent {
+  object_type?: string;
+  object_id?: number;
+  aspect_type?: string;
+  owner_id?: number;
+  event_time?: number;
+  subscription_id?: number;
+  updates?: Record<string, string>;
+}
