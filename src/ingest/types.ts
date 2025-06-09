@@ -41,3 +41,13 @@ export interface StravaWebhookEvent {
   subscription_id?: number;
   updates?: Record<string, string>;
 }
+
+export interface AthleteLink {
+  athleteId: string;
+  stravaAthleteId: number;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: Date;
+  scope: string;
+  timezone: string;
+}
