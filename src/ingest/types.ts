@@ -51,3 +51,16 @@ export interface AthleteLink {
   scope: string;
   timezone: string;
 }
+
+/** A session as this package writes it. Deliberately loose - the domain layer
+ * owns the real session type. */
+export interface MappedSession {
+  athleteId: string;
+  completedAt: Date;
+  distanceM: number | null;
+  durationS: number | null;
+  avgHr: number | null;
+  perceivedEffort: number | null;
+  source: 'strava';
+  localDate: string;
+}
