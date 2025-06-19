@@ -50,3 +50,10 @@ export const fetchTransport: JsonTransport = function (method, url, headers, bod
     },
   );
 };
+
+export interface StravaClientOptions {
+  baseUrl: string;
+  clientId: string;
+  clientSecret: string;
+  transport?: JsonTransport;
+}
