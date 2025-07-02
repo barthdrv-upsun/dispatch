@@ -6,3 +6,11 @@ import type { MappedSession, StravaActivity } from './types.js';
  * the fence - this package has never imported them.
  */
 const RUN_SPORT_TYPES = ['Run', 'TrailRun', 'VirtualRun', 'TreadmillRun'];
+
+export interface MapFailure {
+  reason: string;
+}
+
+export type MapResult =
+  | { ok: true; session: MappedSession }
+  | { ok: false; failure: MapFailure };
