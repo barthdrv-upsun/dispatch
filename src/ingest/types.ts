@@ -64,3 +64,19 @@ export interface MappedSession {
   source: 'strava';
   localDate: string;
 }
+
+export interface IngestOutcome {
+  stravaActivityId: number;
+  status: 'ingested' | 'duplicate' | 'skipped';
+  sessionId?: string;
+  reason?: string;
+}
+
+export interface IngestSummary {
+  athleteId: string;
+  considered: number;
+  ingested: number;
+  duplicates: number;
+  skipped: number;
+  outcomes: IngestOutcome[];
+}
