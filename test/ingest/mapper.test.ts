@@ -12,3 +12,26 @@ function fixture(id: number): StravaActivity {
   }
   return found;
 }
+
+describe('isRun', () => {
+  it('takes every shape of run', () => {
+    expect(mapper.isRun({ sport_type: 'Run' })).toBe(true);
+    expect(mapper.isRun({ sport_type: 'TrailRun' })).toBe(true);
+    expect(mapper.isRun({ sport_type: 'VirtualRun' })).toBe(true);
+  });
+
+  it('leaves everything else on Strava\'s side', () => {
+    expect(mapper.isRun({ sport_type: 'Ride' })).toBe(false);
+    expect(mapper.isRun({ sport_type: 'Swim' })).toBe(false);
+    expect(mapper.isRun({ sport_type: 'WeightTraining' })).toBe(false);
+  });
+
+  it('falls back to the older type field', () => {
+    expect(mapper.isRun({ type: 'Run' })).toBe(true);
+  });
+
+  it('says no to nothing at all', () => {
+    expect(mapper.isRun(null)).toBe(false);
+    expect(mapper.isRun({})).toBe(false);
+  });
+});
