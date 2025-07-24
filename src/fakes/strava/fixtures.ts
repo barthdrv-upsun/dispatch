@@ -19,3 +19,15 @@ function read<T>(name: string): T {
   const raw = fs.readFileSync(path.join(fixtureDir, name), 'utf8');
   return JSON.parse(raw) as T;
 }
+
+/**
+ * Recorded off the real API in July 2025 and then frozen. Nothing here is
+ * fetched at runtime, so the double answers the same way on every machine.
+ */
+export function recordedActivities(): StravaActivity[] {
+  return read<StravaActivity[]>('athlete_activities.json');
+}
+
+export function recordedTokens(): TokenFixture {
+  return read<TokenFixture>('tokens.json');
+}
