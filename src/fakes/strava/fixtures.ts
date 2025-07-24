@@ -31,3 +31,11 @@ export function recordedActivities(): StravaActivity[] {
 export function recordedTokens(): TokenFixture {
   return read<TokenFixture>('tokens.json');
 }
+
+export function activityOwner(activity: StravaActivity): number | null {
+  const owner = (activity as { athlete?: { id?: number } }).athlete;
+  if (!owner || owner.id === null || owner.id === undefined) {
+    return null;
+  }
+  return owner.id;
+}
