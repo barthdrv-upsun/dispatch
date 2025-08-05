@@ -39,3 +39,11 @@ export function activityOwner(activity: StravaActivity): number | null {
   }
   return owner.id;
 }
+
+/**
+ * The delivery log from the July outage, duplicates and all. Replay it as-is:
+ * activity 14880011 arrives twice, 58 seconds apart, with the same object_id.
+ */
+export function recordedDeliveries(): StravaWebhookEvent[] {
+  return read<StravaWebhookEvent[]>('webhook_deliveries.json');
+}

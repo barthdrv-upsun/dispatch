@@ -1,0 +1,83 @@
+[
+  {
+    "object_type": "activity",
+    "object_id": 14880011,
+    "aspect_type": "create",
+    "owner_id": 7311001,
+    "subscription_id": 248112,
+    "event_time": 1751472303,
+    "_recorded_note": "first delivery"
+  },
+  {
+    "object_type": "activity",
+    "object_id": 14880011,
+    "aspect_type": "create",
+    "owner_id": 7311001,
+    "subscription_id": 248112,
+    "event_time": 1751472361,
+    "_recorded_note": "same event again, 58s later"
+  },
+  {
+    "object_type": "activity",
+    "object_id": 14880014,
+    "aspect_type": "create",
+    "owner_id": 7311001,
+    "subscription_id": 248112,
+    "event_time": 1751696412
+  },
+  {
+    "object_type": "activity",
+    "object_id": 14880014,
+    "aspect_type": "update",
+    "owner_id": 7311001,
+    "subscription_id": 248112,
+    "event_time": 1751696480,
+    "updates": {
+      "title": "Long run - lake loop"
+    }
+  },
+  {
+    "object_type": "activity",
+    "object_id": 14880013,
+    "aspect_type": "create",
+    "owner_id": 7311001,
+    "subscription_id": 248112,
+    "event_time": 1751559729
+  },
+  {
+    "object_type": "activity",
+    "object_id": 14880020,
+    "aspect_type": "create",
+    "owner_id": 7311002,
+    "subscription_id": 248113,
+    "event_time": 1751393700
+  },
+  {
+    "object_type": "activity",
+    "object_id": 14880011,
+    "aspect_type": "delete",
+    "owner_id": 7311001,
+    "subscription_id": 248112,
+    "event_time": 1751700000
+  },
+  {
+    "object_type": "athlete",
+    "object_id": 7311001,
+    "aspect_type": "update",
+    "owner_id": 7311001,
+    "subscription_id": 248112,
+    "event_time": 1751700600,
+    "updates": {
+      "authorized": "false"
+    }
+  },
+  {
+    "object_type": "activity",
+    "object_id": 14889999,
+    "aspect_type": "create",
+    "owner_id": 7311001,
+    "subscription_id": 248112,
+    "event_time": 1751701200,
+    "_recorded_note": "activity 404s on fetch"
+  }
+]
