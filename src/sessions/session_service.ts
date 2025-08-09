@@ -1,3 +1,4 @@
+import { athleteLocalDay } from '../lib/time.js';
 import type { AthleteRow, Callback } from '../athletes/athlete_service.js';
 
 export interface SessionRow {
@@ -10,8 +11,6 @@ export interface SessionRow {
   perceivedEffort: number | null;
   source: string;
 }
-
-// @P:m03.A
 
 export interface SessionRepository {
   insert(session: Omit<SessionRow, 'id'>, cb: Callback<string>): void;
@@ -26,8 +25,6 @@ export interface ManualSessionInput {
   avgHr?: number | null;
   perceivedEffort?: number | null;
 }
-
-// @P:m03.A
 
 /**
  * Manual session logging. Athletes fill this in from the app; coaches fill it
@@ -89,7 +86,10 @@ export class SessionService {
     );
   }
 
-  /** Groups an athlete's sessions by the day they happened on. */
+  /**
+   * Groups an athlete's sessions by the day they happened on, in the
+   * athlete's own timezone.
+   */
   byLocalDay(athlete: AthleteRow, sessions: SessionRow[]): Record<string, SessionRow[]> {
     const out: Record<string, SessionRow[]> = {};
     if (!athlete || !sessions) {
@@ -100,7 +100,7 @@ export class SessionService {
       if (!session || !session.completedAt) {
         continue;
       }
-      const day = session.completedAt.toISOString().slice(0, 10);
+      const day = athleteLocalDay(session.completedAt, athlete.timezone);
       if (!out[day]) {
         out[day] = [];
       }
