@@ -89,3 +89,15 @@ describe('iso weeks', () => {
     expect(endOfIsoWeek('2025-11-16')).toBe('2025-11-16');
   });
 });
+
+describe('instantFromWallClock', () => {
+  it('reads a Strava-style local stamp in the athlete\'s zone', () => {
+    expect(instantFromWallClock('2025-07-01T07:42:11Z', 'Europe/Berlin').toISOString()).toBe(
+      '2025-07-01T05:42:11.000Z',
+    );
+  });
+
+  it('refuses a stamp it cannot read', () => {
+    expect(() => instantFromWallClock('not a time', 'Europe/Berlin')).toThrow(RangeError);
+  });
+});

@@ -124,3 +124,19 @@ describe('the local strava double', () => {
     expect(response.statusCode).toBe(404);
   });
 });
+
+describe('the recorded fixtures', () => {
+  it('include a duplicate delivery of the same activity', () => {
+    const deliveries = recordedDeliveries().filter(
+      (event) => event.object_type === 'activity' && event.aspect_type === 'create',
+    );
+    const ids = deliveries.map((event) => event.object_id);
+    expect(new Set(ids).size).toBeLessThan(ids.length);
+  });
+
+  it('include activities that are not runs', () => {
+    const kinds = new Set(recordedActivities().map((activity) => activity.sport_type));
+    expect(kinds.has('Ride')).toBe(true);
+    expect(kinds.has('Run')).toBe(true);
+  });
+});
