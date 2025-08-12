@@ -1,6 +1,6 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { StravaActivity } from '../../legacy/ingest/types.js';
-import { activityOwner, recordedActivities, recordedTokens } from './fixtures.js';
+import { activityOwner, recordedActivities, recordedDeliveries, recordedTokens } from './fixtures.js';
 
 const ACCESS_TOKEN_PREFIX = 'local-access-';
 
@@ -34,8 +34,6 @@ function startedAtEpochS(activity: StravaActivity): number {
   const parsed = Date.parse(activity.start_date);
   return Number.isNaN(parsed) ? 0 : Math.floor(parsed / 1000);
 }
-
-// @P:m05.A
 
 /**
  * A local stand-in for the Strava REST API.
@@ -109,10 +107,16 @@ export function buildFakeStrava(): FastifyInstance {
     return reply.code(200).send(found);
   });
 
+  /**
+   * Not part of the Strava API. Lets a test or a demo script pull the recorded
+   * delivery log - duplicates included - and post it back at us.
+   */
+  app.get('/_fake/webhook-deliveries', async (_request, reply) => {
+    return reply.code(200).send(recordedDeliveries());
+  });
+
   return app;
 }
-
-// @P:m05.A
 
 export async function startFakeStrava(port = 4010): Promise<FastifyInstance> {
   const app = buildFakeStrava();
