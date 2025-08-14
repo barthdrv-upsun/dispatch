@@ -1,8 +1,8 @@
 import Fastify, { type FastifyInstance } from 'fastify';
-import { registerRoutes } from './routes/index.js';
+import { registerRoutes, type RouteOptions } from './routes/index.js';
 import type { RouteDeps } from './routes/context.js';
 
-export type AppOptions = {
+export type AppOptions = RouteOptions & {
   logger?: boolean;
 };
 
@@ -12,6 +12,6 @@ export type AppOptions = {
  */
 export function buildApp(deps: RouteDeps, options: AppOptions = {}): FastifyInstance {
   const app = Fastify({ logger: options.logger ?? false });
-  registerRoutes(app, deps);
+  registerRoutes(app, deps, { ingest: options.ingest });
   return app;
 }
