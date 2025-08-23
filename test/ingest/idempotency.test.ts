@@ -106,3 +106,35 @@ describe('replaying the recorded delivery log', () => {
     expect(reasons).toContain('activity not found on strava');
   });
 });
+
+describe('one delivery at a time', () => {
+  it('turns down an empty delivery', async () => {
+    const { webhook } = harness();
+    const outcome = await new Promise<IngestOutcome>((resolve, reject) => {
+      webhook.handle(null, (err, result) => (err || !result ? reject(err) : resolve(result)));
+    });
+    expect(outcome.reason).toBe('empty delivery');
+  });
+
+  it('turns down a delivery for an athlete nobody has linked', async () => {
+    const { webhook } = harness();
+    const outcome = await new Promise<IngestOutcome>((resolve, reject) => {
+      webhook.handle(
+        { object_type: 'activity', object_id: 14880011, aspect_type: 'create', owner_id: 999 },
+        (err, result) => (err || !result ? reject(err) : resolve(result)),
+      );
+    });
+    expect(outcome.reason).toBe('no link for owner');
+  });
+
+  it('turns down a delivery with no object id', async () => {
+    const { webhook } = harness();
+    const outcome = await new Promise<IngestOutcome>((resolve, reject) => {
+      webhook.handle(
+        { object_type: 'activity', aspect_type: 'create', owner_id: 7311001 },
+        (err, result) => (err || !result ? reject(err) : resolve(result)),
+      );
+    });
+    expect(outcome.reason).toBe('no object_id');
+  });
+});
