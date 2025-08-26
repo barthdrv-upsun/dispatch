@@ -79,3 +79,140 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
 });
+
+describe('syncAthlete', () => {
+  it('ingests the runs and skips everything else', async () => {
+    const store = new MemoryIngestStore();
+    store.addLink(link());
+    const transport = scriptedTransport({
+      activities: [
+        run(1, '2025-07-14T05:00:00Z'),
+        { id: 2, sport_type: 'Ride', start_date: '2025-07-14T16:00:00Z', distance: 20_000, moving_time: 3000 },
+        run(3, '2025-07-13T05:00:00Z'),
+      ],
+    });
+    const service = new IngestService({
+      client: new StravaClient({ baseUrl: 'http://strava.test', clientId: 'x', clientSecret: 'y', transport }),
+      store,
+    });
+
+    const summary = await sync(service, 'athlete-a');
+    expect(summary.considered).toBe(3);
+    expect(summary.ingested).toBe(2);
+    expect(summary.skipped).toBe(1);
+    expect(summary.duplicates).toBe(0);
+    expect(store.sessions).toHaveLength(2);
+    expect(summary.outcomes.find((outcome) => outcome.stravaActivityId === 2)?.reason).toBe('not a run');
+  });
+
+  it('reports a replayed activity as a duplicate rather than writing it twice', async () => {
+    const store = new MemoryIngestStore();
+    store.addLink(link());
+    const transport = scriptedTransport({ activities: [run(1, '2025-07-14T05:00:00Z')] });
+    const service = new IngestService({
+      client: new StravaClient({ baseUrl: 'http://strava.test', clientId: 'x', clientSecret: 'y', transport }),
+      store,
+    });
+
+    const first = await sync(service, 'athlete-a');
+    const second = await sync(service, 'athlete-a');
+    expect(first.ingested).toBe(1);
+    expect(second.ingested).toBe(0);
+    expect(second.duplicates).toBe(1);
+    expect(store.sessions).toHaveLength(1);
+  });
+
+  it('works out the load for each session it writes', async () => {
+    const store = new MemoryIngestStore();
+    store.addLink(link());
+    const transport = scriptedTransport({ activities: [run(1, '2025-07-14T05:00:00Z')] });
+    const service = new IngestService({
+      client: new StravaClient({ baseUrl: 'http://strava.test', clientId: 'x', clientSecret: 'y', transport }),
+      store,
+      loadFor: (session) =>
+        sessionLoad({
+          durationS: session.durationS,
+          distanceM: session.distanceM,
+          avgHr: session.avgHr,
+          perceivedEffort: session.perceivedEffort,
+        }),
+    });
+
+    await sync(service, 'athlete-a');
+    expect(store.sessions[0]?.load).toBe(200);
+  });
+
+  it('buckets the session on the athlete\'s own day', async () => {
+    const store = new MemoryIngestStore();
+    store.addLink(link({ timezone: 'Pacific/Auckland' }));
+    const transport = scriptedTransport({ activities: [run(1, '2025-07-14T20:40:00Z')] });
+    const service = new IngestService({
+      client: new StravaClient({ baseUrl: 'http://strava.test', clientId: 'x', clientSecret: 'y', transport }),
+      store,
+    });
+
+    await sync(service, 'athlete-a');
+    expect(store.sessions[0]?.localDate).toBe('2025-07-15');
+  });
+
+  /** The token path reads the wall clock directly, hence the fake timers. */
+  it('leaves a token alone while it has life in it', async () => {
+    const store = new MemoryIngestStore();
+    store.addLink(link({ expiresAt: new Date('2025-07-15T15:00:00Z') }));
+    const calls: string[] = [];
+    const transport = scriptedTransport({ activities: [], calls });
+    const service = new IngestService({
+      client: new StravaClient({ baseUrl: 'http://strava.test', clientId: 'x', clientSecret: 'y', transport }),
+      store,
+    });
+
+    await sync(service, 'athlete-a');
+    expect(calls.some((call) => call.includes('/oauth/token'))).toBe(false);
+    expect(store.updates).toHaveLength(0);
+  });
+
+  it('refreshes a token that is about to expire, and keeps the new one', async () => {
+    const store = new MemoryIngestStore();
+    store.addLink(link({ expiresAt: new Date('2025-07-15T09:01:00Z') }));
+    const calls: string[] = [];
+    const transport = scriptedTransport({ activities: [], calls });
+    const service = new IngestService({
+      client: new StravaClient({ baseUrl: 'http://strava.test', clientId: 'x', clientSecret: 'y', transport }),
+      store,
+    });
+
+    await sync(service, 'athlete-a');
+    expect(calls[0]).toBe('POST /oauth/token');
+    expect(store.updates).toHaveLength(1);
+    expect(store.links.get('athlete-a')?.accessToken).toBe('local-access-7311001-rotated');
+  });
+
+  it('gives up on an athlete with no strava link', async () => {
+    const store = new MemoryIngestStore();
+    const service = new IngestService({
+      client: new StravaClient({
+        baseUrl: 'http://strava.test',
+        clientId: 'x',
+        clientSecret: 'y',
+        transport: scriptedTransport({}),
+      }),
+      store,
+    });
+    await expect(sync(service, 'athlete-none')).rejects.toThrow('no strava link');
+  });
+
+  it('gives up when the refresh comes back without a token', async () => {
+    const store = new MemoryIngestStore();
+    store.addLink(link({ expiresAt: new Date('2025-07-15T09:01:00Z') }));
+    const service = new IngestService({
+      client: new StravaClient({
+        baseUrl: 'http://strava.test',
+        clientId: 'x',
+        clientSecret: 'y',
+        transport: scriptedTransport({ token: {} }),
+      }),
+      store,
+    });
+    await expect(sync(service, 'athlete-a')).rejects.toThrow('without an access token');
+  });
+});
