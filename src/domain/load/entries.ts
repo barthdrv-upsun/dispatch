@@ -50,3 +50,28 @@ function countsAsRunning(session: SessionForLoad): boolean {
 function completed(session: SessionForLoad): session is SessionForLoad & { completedAt: Date } {
   return session.completedAt !== null && !Number.isNaN(session.completedAt.getTime());
 }
+
+/**
+ * Buckets running load into the athlete's own days.
+ *
+ * `timeZone` is the athlete's zone, never the squad's and never UTC. Two
+ * sessions logged an hour apart can land on different days for two athletes,
+ * and the same session lands on a different day for one athlete who has moved
+ * zone since.
+ */
+export function toRunningLoadEntries(
+  sessions: readonly SessionForLoad[],
+  timeZone: string,
+): LoadEntry[] {
+  const byDay = new Map<LocalDate, number>();
+  for (const session of sessions) {
+    if (!completed(session) || !countsAsRunning(session)) {
+      continue;
+    }
+    const day = athleteLocalDay(session.completedAt, timeZone);
+    byDay.set(day, (byDay.get(day) ?? 0) + toNumber(session.load));
+  }
+  return [...byDay.entries()]
+    .map(([localDate, load]) => ({ localDate, load: round2(load) }))
+    .sort((a, b) => (a.localDate < b.localDate ? -1 : 1));
+}
