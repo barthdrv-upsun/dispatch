@@ -75,3 +75,21 @@ export function toRunningLoadEntries(
     .map(([localDate, load]) => ({ localDate, load: round2(load) }))
     .sort((a, b) => (a.localDate < b.localDate ? -1 : 1));
 }
+
+/** The same bucketing, for the distance-based rules. */
+export function toRunningVolumeEntries(
+  sessions: readonly SessionForLoad[],
+  timeZone: string,
+): VolumeEntry[] {
+  const byDay = new Map<LocalDate, number>();
+  for (const session of sessions) {
+    if (!completed(session) || !countsAsRunning(session)) {
+      continue;
+    }
+    const day = athleteLocalDay(session.completedAt, timeZone);
+    byDay.set(day, (byDay.get(day) ?? 0) + (session.distanceM ?? 0));
+  }
+  return [...byDay.entries()]
+    .map(([localDate, distanceM]) => ({ localDate, distanceM }))
+    .sort((a, b) => (a.localDate < b.localDate ? -1 : 1));
+}
