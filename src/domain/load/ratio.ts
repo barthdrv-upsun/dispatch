@@ -53,3 +53,18 @@ export type KindDecision = {
   downgradedFrom: RunningKind | null;
   reason: string | null;
 };
+
+/**
+ * R1's teeth: a hard session asked for while the ratio sits outside the band
+ * comes back as an easy one.
+ */
+export function downgradeForRatio(requested: RunningKind, verdict: RatioVerdict): KindDecision {
+  if (verdict.withinBounds || !isHardRunningKind(requested)) {
+    return { kind: requested, downgradedFrom: null, reason: null };
+  }
+  return {
+    kind: 'easy',
+    downgradedFrom: requested,
+    reason: `acute:chronic ratio ${verdict.ratio.toFixed(2)} is ${verdict.position} the ${RATIO_MIN}-${RATIO_MAX} band`,
+  };
+}
