@@ -34,3 +34,32 @@ export function heartRateReserveFraction(
   }
   return Math.min(1, Math.max(0, fraction));
 }
+
+export function sessionLoad(input: SessionLoadInput): number | null {
+  const minutes = input.durationS !== null && input.durationS > 0 ? input.durationS / 60 : null;
+
+  if (minutes !== null && input.perceivedEffort !== null && input.perceivedEffort > 0) {
+    return round2(minutes * input.perceivedEffort);
+  }
+
+  if (
+    minutes !== null &&
+    input.avgHr !== null &&
+    input.restingHr !== null &&
+    input.restingHr !== undefined &&
+    input.maxHr !== null &&
+    input.maxHr !== undefined
+  ) {
+    const reserve = heartRateReserveFraction(input.avgHr, input.restingHr, input.maxHr);
+    if (reserve !== null) {
+      // Scaled onto the same 1-10 axis the athletes report on.
+      return round2(minutes * (1 + reserve * 9));
+    }
+  }
+
+  if (input.distanceM !== null && input.distanceM > 0) {
+    return round2((input.distanceM / 1000) * DISTANCE_ONLY_EFFORT_PER_KM);
+  }
+
+  return null;
+}
