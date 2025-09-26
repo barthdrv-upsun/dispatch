@@ -80,3 +80,7 @@ export interface IngestSummary {
   skipped: number;
   outcomes: IngestOutcome[];
 }
+
+export interface MappedSessionWithLoad extends MappedSession {
+  load: number | null;
+}
