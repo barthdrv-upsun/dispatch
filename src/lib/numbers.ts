@@ -6,3 +6,11 @@ export function round2(value: number): number {
 export function round1(value: number): number {
   return Math.round(value * 10) / 10;
 }
+
+export function sum(values: readonly number[]): number {
+  let total = 0;
+  for (const value of values) {
+    total += value;
+  }
+  return total;
+}
