@@ -14,3 +14,11 @@ export function sum(values: readonly number[]): number {
   }
   return total;
 }
+
+export function toNumber(value: string | number | null | undefined, fallback = 0): number {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+  const parsed = typeof value === 'number' ? value : Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
