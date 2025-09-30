@@ -1,4 +1,4 @@
-import { integer, pgEnum, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { integer, numeric, pgEnum, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { athletes } from './athletes.js';
 
 export const sessionSource = pgEnum('session_source', ['manual', 'strava']);
@@ -14,5 +14,6 @@ export const sessions = pgTable('sessions', {
   durationS: integer('duration_s'),
   avgHr: integer('avg_hr'),
   perceivedEffort: integer('perceived_effort'),
+  load: numeric('load', { precision: 8, scale: 2 }),
   source: sessionSource('source').notNull().default('manual'),
 });

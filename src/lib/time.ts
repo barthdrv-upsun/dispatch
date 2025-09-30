@@ -106,3 +106,9 @@ export function instantFromWallClock(wallClock: string, timeZone: string): Date 
   }
   return instant;
 }
+
+/** ISO weekday, Monday = 1 through Sunday = 7. */
+export function localWeekday(day: LocalDate): number {
+  const jsDay = new Date(dayAnchor(day)).getUTCDay();
+  return jsDay === 0 ? 7 : jsDay;
+}
