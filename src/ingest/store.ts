@@ -1,4 +1,4 @@
-import type { AthleteLink, Callback, MappedSession } from './types.js';
+import type { AthleteLink, Callback, MappedSessionWithLoad } from './types.js';
 
 export interface LinkPatch {
   accessToken?: string;
@@ -22,7 +22,7 @@ export interface IngestStore {
    * that unique index is what makes a replayed webhook harmless.
    */
   insertSession(
-    session: MappedSession,
+    session: MappedSessionWithLoad,
     stravaActivityId: number,
     cb: Callback<string | undefined>,
   ): void;
