@@ -7,6 +7,7 @@ import type {
   IngestOutcome,
   IngestSummary,
   MappedSession,
+  MappedSessionWithLoad,
   StravaActivity,
 } from './types.js';
 
@@ -18,6 +19,7 @@ export interface IngestServiceOptions {
   store: IngestStore;
   mapper?: ActivityMapper;
   defaultTimezone?: string;
+  loadFor?: (session: MappedSession) => number | null;
 }
 
 /**
@@ -30,6 +32,7 @@ export class IngestService {
   private readonly client: StravaClient;
   private readonly store: IngestStore;
   private readonly mapper: ActivityMapper;
+  private readonly loadFor: ((session: MappedSession) => number | null) | null;
 
   constructor(options: IngestServiceOptions) {
     if (!options || !options.client || !options.store) {
@@ -38,6 +41,7 @@ export class IngestService {
     this.client = options.client;
     this.store = options.store;
     this.mapper = options.mapper || new ActivityMapper(options.defaultTimezone || 'UTC');
+    this.loadFor = options.loadFor || null;
   }
 
   syncAthlete(athleteId: string, cb: Callback<IngestSummary>): void {
@@ -108,7 +112,18 @@ export class IngestService {
       cb(null, { stravaActivityId: activityId, status: 'skipped', reason: mapped.failure.reason });
       return;
     }
-    this.store.insertSession(mapped.session, activityId, function (err, sessionId) {
+    const withLoad: MappedSessionWithLoad = {
+      athleteId: mapped.session.athleteId,
+      completedAt: mapped.session.completedAt,
+      distanceM: mapped.session.distanceM,
+      durationS: mapped.session.durationS,
+      avgHr: mapped.session.avgHr,
+      perceivedEffort: mapped.session.perceivedEffort,
+      source: 'strava',
+      localDate: mapped.session.localDate,
+      load: this.loadFor ? this.loadFor(mapped.session) : null,
+    };
+    this.store.insertSession(withLoad, activityId, function (err, sessionId) {
       if (err) {
         cb(err);
         return;
