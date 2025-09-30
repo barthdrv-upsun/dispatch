@@ -2,7 +2,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import type { Database } from '../db/client.js';
 import { athletes, sessions, stravaActivities, stravaLinks } from '../db/schema.js';
 import type { IngestStore, LinkPatch } from './store.js';
-import type { AthleteLink, Callback, MappedSession } from './types.js';
+import type { AthleteLink, Callback, MappedSessionWithLoad } from './types.js';
 
 function toError(err: unknown): Error {
   return err instanceof Error ? err : new Error(String(err));
@@ -118,7 +118,7 @@ export class PgIngestStore implements IngestStore {
    * report.
    */
   insertSession(
-    session: MappedSession,
+    session: MappedSessionWithLoad,
     stravaActivityId: number,
     cb: Callback<string | undefined>,
   ): void {
@@ -148,6 +148,7 @@ export class PgIngestStore implements IngestStore {
           durationS: session.durationS,
           avgHr: session.avgHr,
           perceivedEffort: session.perceivedEffort,
+          load: session.load === null ? null : session.load.toFixed(2),
           source: 'strava',
         })
         .returning({ id: sessions.id });
