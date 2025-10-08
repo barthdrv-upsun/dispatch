@@ -37,3 +37,8 @@ export function assessRamp(entries: readonly VolumeEntry[], asOf: LocalDate): Ra
   const ratio = round2(currentM / previousM);
   return { currentM, previousM, ratio, withinCap: ratio <= RAMP_CAP };
 }
+
+/** The most an athlete may run over the next rolling week. */
+export function rampCeilingM(previousM: number): number {
+  return round2(previousM * RAMP_CAP);
+}
