@@ -23,3 +23,19 @@ export function assessRest(entries: readonly LoadEntry[], asOf: LocalDate): Rest
   const restDays = localDateRange(window.from, window.to).filter((day) => !loaded.has(day));
   return { restDays, compliant: restDays.length > 0 };
 }
+
+/**
+ * True when adding a running session on `day` would leave the athlete's week
+ * without a single rest day.
+ */
+export function wouldBreakRest(
+  entries: readonly LoadEntry[],
+  day: LocalDate,
+  asOf: LocalDate,
+): boolean {
+  const before = assessRest(entries, asOf);
+  if (before.restDays.length > 1) {
+    return false;
+  }
+  return before.restDays.includes(day);
+}
