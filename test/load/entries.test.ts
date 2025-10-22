@@ -72,3 +72,21 @@ describe('toRunningLoadEntries', () => {
     expect(entries.map((entry) => entry.localDate)).toEqual(['2026-05-04', '2026-05-05', '2026-05-06']);
   });
 });
+
+describe('toRunningVolumeEntries', () => {
+  it('buckets distance the same way load is bucketed', () => {
+    const entries = toRunningVolumeEntries(
+      [
+        session({ completedAt: new Date('2026-05-04T05:30:00Z'), distanceM: 8000 }),
+        session({ completedAt: new Date('2026-05-04T16:30:00Z'), distanceM: 6000 }),
+      ],
+      'Europe/Berlin',
+    );
+    expect(entries).toEqual([{ localDate: '2026-05-04', distanceM: 14_000 }]);
+  });
+
+  it('treats a missing distance as nothing run', () => {
+    const entries = toRunningVolumeEntries([session({ distanceM: null })], 'Europe/Berlin');
+    expect(entries).toEqual([{ localDate: '2026-05-04', distanceM: 0 }]);
+  });
+});
