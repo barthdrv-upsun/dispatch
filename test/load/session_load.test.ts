@@ -36,3 +36,14 @@ describe('sessionLoad', () => {
     ).toBe(35);
   });
 });
+
+describe('heartRateReserveFraction', () => {
+  it('clamps to the 0-1 range', () => {
+    expect(heartRateReserveFraction(200, 50, 190)).toBe(1);
+    expect(heartRateReserveFraction(40, 50, 190)).toBe(0);
+  });
+
+  it('refuses a reserve that makes no sense', () => {
+    expect(heartRateReserveFraction(150, 190, 190)).toBeNull();
+  });
+});
