@@ -52,3 +52,28 @@ describe('assessRatio', () => {
     expect(verdict.withinBounds).toBe(true);
   });
 });
+
+describe('downgradeForRatio', () => {
+  it('downgrades a hard session when the ratio is outside the band', () => {
+    const decision = downgradeForRatio('interval', assessRatio(400, 250));
+    expect(decision.kind).toBe('easy');
+    expect(decision.downgradedFrom).toBe('interval');
+    expect(decision.reason).toContain('1.60');
+  });
+
+  it('downgrades a long run too', () => {
+    expect(downgradeForRatio('long', assessRatio(400, 250)).kind).toBe('easy');
+  });
+
+  it('leaves an easy session alone whatever the ratio says', () => {
+    const decision = downgradeForRatio('easy', assessRatio(400, 250));
+    expect(decision.kind).toBe('easy');
+    expect(decision.downgradedFrom).toBeNull();
+  });
+
+  it('leaves a hard session alone when the ratio is fine', () => {
+    const decision = downgradeForRatio('tempo', assessRatio(260, 250));
+    expect(decision.kind).toBe('tempo');
+    expect(decision.reason).toBeNull();
+  });
+});
