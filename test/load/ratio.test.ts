@@ -20,3 +20,35 @@ describe('computeLoadRatio', () => {
     expect(() => computeLoadRatio(Number.NaN, 100)).toThrow(RangeError);
   });
 });
+
+describe('assessRatio', () => {
+  it('accepts a ratio inside the band', () => {
+    const verdict = assessRatio(260, 250);
+    expect(verdict.position).toBe('within');
+    expect(verdict.withinBounds).toBe(true);
+  });
+
+  it('accepts both edges of the band', () => {
+    expect(assessRatio(RATIO_MIN * 100, 100).position).toBe('within');
+    expect(assessRatio(RATIO_MAX * 100, 100).position).toBe('within');
+  });
+
+  it('flags a ratio above the band', () => {
+    const verdict = assessRatio(400, 250);
+    expect(verdict.ratio).toBe(1.6);
+    expect(verdict.position).toBe('above');
+    expect(verdict.withinBounds).toBe(false);
+  });
+
+  it('flags a ratio below the band', () => {
+    const verdict = assessRatio(100, 250);
+    expect(verdict.position).toBe('below');
+    expect(verdict.withinBounds).toBe(false);
+  });
+
+  it('does not punish an athlete with no history for having no history', () => {
+    const verdict = assessRatio(120, 0);
+    expect(verdict.position).toBe('unknown');
+    expect(verdict.withinBounds).toBe(true);
+  });
+});
