@@ -21,3 +21,29 @@ export function isInTaper(asOf: LocalDate, raceDate: LocalDate | null | undefine
   const daysToRace = localDaysBetween(asOf, raceDate);
   return daysToRace >= 0 && daysToRace <= TAPER_WINDOW_DAYS;
 }
+
+export function assessTaper(
+  entries: readonly VolumeEntry[],
+  asOf: LocalDate,
+  raceDate: LocalDate | null | undefined,
+): TaperVerdict {
+  if (!raceDate) {
+    return { inTaper: false, daysToRace: null, currentM: 0, previousM: 0, compliant: true };
+  }
+  const daysToRace = localDaysBetween(asOf, raceDate);
+  const currentM = rollingVolumeM(entries, rollingWindow(asOf, ACUTE_DAYS));
+  const previousM = rollingVolumeM(
+    entries,
+    rollingWindow(addLocalDays(asOf, -ACUTE_DAYS), ACUTE_DAYS),
+  );
+  if (!isInTaper(asOf, raceDate)) {
+    return { inTaper: false, daysToRace, currentM, previousM, compliant: true };
+  }
+  return {
+    inTaper: true,
+    daysToRace,
+    currentM,
+    previousM,
+    compliant: currentM <= previousM,
+  };
+}
