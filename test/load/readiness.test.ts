@@ -80,3 +80,25 @@ describe('assessReadiness', () => {
     expect(readiness.taper.inTaper).toBe(true);
   });
 });
+
+describe('prescribeKind', () => {
+  it('leaves a hard session alone when the ratio is inside the band', () => {
+    const { entries, volume } = steadyMonth();
+    const readiness = assessReadiness({ asOf: '2026-05-17', loadEntries: entries, volumeEntries: volume });
+    expect(prescribeKind('interval', readiness).kind).toBe('interval');
+  });
+
+  it('downgrades a hard session when the last week has spiked', () => {
+    const spiked = [
+      { localDate: '2026-05-11', load: 200 },
+      { localDate: '2026-05-13', load: 200 },
+      { localDate: '2026-05-15', load: 200 },
+      { localDate: '2026-05-16', load: 200 },
+      { localDate: '2026-04-25', load: 40 },
+    ];
+    const readiness = assessReadiness({ asOf: '2026-05-17', loadEntries: spiked, volumeEntries: [] });
+    const decision = prescribeKind('tempo', readiness);
+    expect(decision.kind).toBe('easy');
+    expect(decision.downgradedFrom).toBe('tempo');
+  });
+});
