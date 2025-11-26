@@ -36,3 +36,36 @@ describe('isInTaper', () => {
     expect(isInTaper('2026-05-10', RACE)).toBe(true);
   });
 });
+
+describe('assessTaper', () => {
+  it('accepts a week that goes down', () => {
+    const verdict = assessTaper(twoWeeks(60_000, 45_000), '2026-05-22', RACE);
+    expect(verdict.inTaper).toBe(true);
+    expect(verdict.daysToRace).toBe(2);
+    expect(verdict.compliant).toBe(true);
+  });
+
+  it('accepts a week that holds level', () => {
+    expect(assessTaper(twoWeeks(60_000, 60_000), '2026-05-22', RACE).compliant).toBe(true);
+  });
+
+  it('refuses a week that goes up inside the taper', () => {
+    const verdict = assessTaper(twoWeeks(60_000, 70_000), '2026-05-22', RACE);
+    expect(verdict.compliant).toBe(false);
+    expect(verdict.currentM).toBe(70_000);
+    expect(verdict.previousM).toBe(60_000);
+  });
+
+  it('says nothing about a week outside the taper', () => {
+    const verdict = assessTaper(twoWeeks(60_000, 70_000), '2026-05-08', RACE);
+    expect(verdict.inTaper).toBe(false);
+    expect(verdict.compliant).toBe(true);
+  });
+
+  it('has nothing to say without a goal race', () => {
+    const verdict = assessTaper(twoWeeks(60_000, 70_000), '2026-05-22', null);
+    expect(verdict.inTaper).toBe(false);
+    expect(verdict.daysToRace).toBeNull();
+    expect(verdict.compliant).toBe(true);
+  });
+});
