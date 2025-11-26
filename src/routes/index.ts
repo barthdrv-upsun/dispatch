@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { athleteRoutes } from './athletes.js';
 import { sessionRoutes } from './sessions.js';
+import { readinessRoutes } from './readiness.js';
 import { stravaRoutes, type IngestBundle } from './strava.js';
 import { registerErrorHandler, type RouteDeps } from './context.js';
 
@@ -16,6 +17,7 @@ export function registerRoutes(app: FastifyInstance, deps: RouteDeps, options: R
   registerErrorHandler(app);
   athleteRoutes(app, deps);
   sessionRoutes(app, deps);
+  readinessRoutes(app, deps);
   if (options.ingest) {
     stravaRoutes(app, deps, options.ingest);
   }
