@@ -39,3 +39,8 @@ export function wouldBreakRest(
   }
   return before.restDays.includes(day);
 }
+
+/** How many days off the athlete has had in the rolling week. */
+export function restDayCount(entries: readonly LoadEntry[], asOf: LocalDate): number {
+  return assessRest(entries, asOf).restDays.length;
+}
