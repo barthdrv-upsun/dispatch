@@ -4,13 +4,7 @@ import { assessRamp, type RampVerdict } from './ramp.js';
 import { assessRatio, downgradeForRatio, type KindDecision, type RatioVerdict } from './ratio.js';
 import { assessRest, type RestVerdict } from './rest.js';
 import { assessTaper, type TaperVerdict } from './taper.js';
-import {
-  ACUTE_DAYS,
-  CHRONIC_DAYS,
-  computeAcuteLoad,
-  computeChronicLoad,
-  rollingWindow,
-} from './windows.js';
+import { computeAcuteLoad, computeChronicLoad } from './windows.js';
 
 export type RuleId = 'R1' | 'R2' | 'R3' | 'R8';
 
@@ -37,8 +31,6 @@ export type Readiness = {
   ok: boolean;
 };
 
-// @P:m09.A
-
 /**
  * Everything the load rules have to say about one athlete on one day.
  *
@@ -47,11 +39,8 @@ export type Readiness = {
  * with.
  */
 export function assessReadiness(input: ReadinessInput): Readiness {
-  const acuteLoad = computeAcuteLoad(input.loadEntries, rollingWindow(input.asOf, ACUTE_DAYS));
-  const chronicLoad = computeChronicLoad(
-    input.loadEntries,
-    rollingWindow(input.asOf, CHRONIC_DAYS),
-  );
+  const acuteLoad = computeAcuteLoad(input.loadEntries, input.asOf);
+  const chronicLoad = computeChronicLoad(input.loadEntries, input.asOf);
 
   const ratio = assessRatio(acuteLoad, chronicLoad);
   const ramp = assessRamp(input.volumeEntries, input.asOf);
@@ -98,8 +87,6 @@ export function assessReadiness(input: ReadinessInput): Readiness {
     ok: findings.every((finding) => finding.ok),
   };
 }
-
-// @P:m09.A
 
 /**
  * What the athlete should actually be given, once R1 has had its say about

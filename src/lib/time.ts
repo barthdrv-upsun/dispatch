@@ -112,3 +112,13 @@ export function localWeekday(day: LocalDate): number {
   const jsDay = new Date(dayAnchor(day)).getUTCDay();
   return jsDay === 0 ? 7 : jsDay;
 }
+
+/** The Monday of the ISO week containing `day`. */
+export function startOfIsoWeek(day: LocalDate): LocalDate {
+  return addLocalDays(day, -(localWeekday(day) - 1));
+}
+
+/** The Sunday of the ISO week containing `day`. */
+export function endOfIsoWeek(day: LocalDate): LocalDate {
+  return addLocalDays(startOfIsoWeek(day), 6);
+}

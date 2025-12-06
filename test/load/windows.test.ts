@@ -1,12 +1,5 @@
 import { expect, it } from 'vitest';
-import {
-  ACUTE_DAYS,
-  CHRONIC_DAYS,
-  computeAcuteLoad,
-  computeChronicLoad,
-  rollingWindow,
-  windowContains,
-} from '../../src/domain/load/windows.js';
+import { computeAcuteLoad, computeChronicLoad, rollingWindow, windowContains } from '../../src/domain/load/windows.js';
 
 const entries = [
   { localDate: '2025-10-01', load: 999 },
@@ -19,14 +12,12 @@ const entries = [
 ];
 
 it('sums the loads inside the acute window', () => {
-  expect(computeAcuteLoad(entries, rollingWindow('2025-11-09', ACUTE_DAYS))).toBe(270);
+  expect(computeAcuteLoad(entries, '2025-11-09')).toBe(270);
 });
 
 it('divides the 28-day sum by four so the two are comparable', () => {
-  expect(computeChronicLoad(entries, rollingWindow('2025-11-09', CHRONIC_DAYS))).toBe(90);
+  expect(computeChronicLoad(entries, '2025-11-09')).toBe(90);
 });
-
-// @P:m08.A
 
 it('builds an inclusive rolling window', () => {
   const window = rollingWindow('2025-11-09', 7);

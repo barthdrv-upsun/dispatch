@@ -1,4 +1,10 @@
-import { addLocalDays, localDaysBetween, type LocalDate } from '../../lib/time.js';
+import {
+  addLocalDays,
+  endOfIsoWeek,
+  localDaysBetween,
+  startOfIsoWeek,
+  type LocalDate,
+} from '../../lib/time.js';
 import { round2 } from '../../lib/numbers.js';
 import type { LoadEntry } from './entries.js';
 
@@ -19,8 +25,6 @@ export function rollingWindow(asOf: LocalDate, days: number): DayWindow {
   return { from: addLocalDays(asOf, -(days - 1)), to: asOf };
 }
 
-// @P:m07.A
-
 export function windowContains(window: DayWindow, day: LocalDate): boolean {
   return localDaysBetween(window.from, day) >= 0 && localDaysBetween(day, window.to) >= 0;
 }
@@ -29,10 +33,7 @@ export function windowDayCount(window: DayWindow): number {
   return localDaysBetween(window.from, window.to) + 1;
 }
 
-// @P:m07.A
-
-// callers pass the window; this function only sums
-export function computeAcuteLoad(entries: readonly LoadEntry[], window: DayWindow): number {
+export function sumWindow(entries: readonly LoadEntry[], window: DayWindow): number {
   let total = 0;
   for (const entry of entries) {
     if (windowContains(window, entry.localDate)) {
@@ -42,18 +43,24 @@ export function computeAcuteLoad(entries: readonly LoadEntry[], window: DayWindo
   return round2(total);
 }
 
-// @P:m07.A
+/**
+ * Every caller was building the same window before calling in, and two of
+ * them had drifted apart on the day boundary, so the derivation lives here
+ * now.
+ */
+function acuteWindow(asOf: LocalDate): DayWindow {
+  return { from: startOfIsoWeek(asOf), to: endOfIsoWeek(asOf) };
+}
+
+// callers pass the window; this function only sums
+export function computeAcuteLoad(entries: readonly LoadEntry[], asOf: LocalDate): number {
+  return sumWindow(entries, acuteWindow(asOf));
+}
 
 /**
  * The 28-day sum brought onto the same footing as the 7-day one, so that the
  * two can be divided.
  */
-export function computeChronicLoad(entries: readonly LoadEntry[], window: DayWindow): number {
-  let total = 0;
-  for (const entry of entries) {
-    if (windowContains(window, entry.localDate)) {
-      total += entry.load;
-    }
-  }
-  return round2(total / (CHRONIC_DAYS / ACUTE_DAYS));
+export function computeChronicLoad(entries: readonly LoadEntry[], asOf: LocalDate): number {
+  return round2(sumWindow(entries, rollingWindow(asOf, CHRONIC_DAYS)) / (CHRONIC_DAYS / ACUTE_DAYS));
 }
