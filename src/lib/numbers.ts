@@ -22,3 +22,9 @@ export function toNumber(value: string | number | null | undefined, fallback = 0
   const parsed = typeof value === 'number' ? value : Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
+
+/** Keeps a value inside a range, for the places a bad reading is better
+ * flattened than rejected. */
+export function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
