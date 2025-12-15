@@ -74,3 +74,23 @@ describe('wouldBreakRest', () => {
     expect(wouldBreakRest(roomier, '2026-05-07', '2026-05-10')).toBe(false);
   });
 });
+
+describe('restDayCount', () => {
+  it('counts the days off', () => {
+    const entries = week({ '2026-05-04': 40, '2026-05-09': 80 });
+    expect(restDayCount(entries, '2026-05-10')).toBe(5);
+  });
+
+  it('counts none for a week with running every day', () => {
+    const entries = week({
+      '2026-05-04': 40,
+      '2026-05-05': 50,
+      '2026-05-06': 60,
+      '2026-05-07': 20,
+      '2026-05-08': 40,
+      '2026-05-09': 80,
+      '2026-05-10': 30,
+    });
+    expect(restDayCount(entries, '2026-05-10')).toBe(0);
+  });
+});
