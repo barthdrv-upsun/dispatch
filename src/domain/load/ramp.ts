@@ -42,3 +42,12 @@ export function assessRamp(entries: readonly VolumeEntry[], asOf: LocalDate): Ra
 export function rampCeilingM(previousM: number): number {
   return round2(previousM * RAMP_CAP);
 }
+
+/** How much further the athlete may go this week before R2 bites. */
+export function rampHeadroomM(entries: readonly VolumeEntry[], asOf: LocalDate): number {
+  const verdict = assessRamp(entries, asOf);
+  if (verdict.previousM <= 0) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return round2(Math.max(0, rampCeilingM(verdict.previousM) - verdict.currentM));
+}
