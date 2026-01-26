@@ -84,3 +84,8 @@ export interface IngestSummary {
 export interface MappedSessionWithLoad extends MappedSession {
   load: number | null;
 }
+
+export interface ActivitySourceResult {
+  sourceId: string;
+  activities: StravaActivity[];
+}
