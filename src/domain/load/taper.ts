@@ -47,3 +47,19 @@ export function assessTaper(
     compliant: currentM <= previousM,
   };
 }
+
+/**
+ * The most the athlete should run in the rolling week ending on `asOf` if the
+ * taper is to hold. Outside the taper window there is no ceiling from R8.
+ */
+export function taperTargetM(
+  entries: readonly VolumeEntry[],
+  asOf: LocalDate,
+  raceDate: LocalDate | null | undefined,
+): number {
+  const verdict = assessTaper(entries, asOf, raceDate);
+  if (!verdict.inTaper) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return verdict.previousM;
+}
