@@ -90,3 +90,63 @@ describe('toRunningVolumeEntries', () => {
     expect(entries).toEqual([{ localDate: '2026-05-04', distanceM: 0 }]);
   });
 });
+
+/**
+ * The travelling-athlete case. Same sessions, same instants; the only thing
+ * that changes is the zone the athlete is living in, and that is enough to
+ * move a run into another day and to move the windows that touch it.
+ */
+describe('an athlete who changes timezone mid-block', () => {
+  const sessions = [
+    session({ completedAt: new Date('2026-05-04T20:40:00Z'), load: 55, distanceM: 12_000 }),
+    session({ completedAt: new Date('2026-05-05T05:10:00Z'), load: 45, distanceM: 9000 }),
+    session({ completedAt: new Date('2026-05-07T05:15:00Z'), load: 70, distanceM: 15_000 }),
+  ];
+
+  it('moves a late-evening run into a different local day', () => {
+    const berlin = toRunningLoadEntries(sessions, 'Europe/Berlin');
+    const auckland = toRunningLoadEntries(sessions, 'Pacific/Auckland');
+
+    // 20:40Z is 22:40 in Berlin - still the 4th - but 08:40 on the 5th in
+    // Auckland, where it lands on the same day as the next morning's run.
+    expect(berlin).toEqual([
+      { localDate: '2026-05-04', load: 55 },
+      { localDate: '2026-05-05', load: 45 },
+      { localDate: '2026-05-07', load: 70 },
+    ]);
+    expect(auckland).toEqual([
+      { localDate: '2026-05-05', load: 100 },
+      { localDate: '2026-05-07', load: 70 },
+    ]);
+  });
+
+  it('shifts every rolling window that touches the moved day', () => {
+    const berlin = toRunningLoadEntries(sessions, 'Europe/Berlin');
+    const auckland = toRunningLoadEntries(sessions, 'Pacific/Auckland');
+
+    // A four-week window ending on the 4th sees the evening run in Berlin and
+    // does not see it at all in Auckland, where it happened on the 5th.
+    expect(computeChronicLoad(berlin, '2026-05-04')).toBe(13.75);
+    expect(computeChronicLoad(auckland, '2026-05-04')).toBe(0);
+  });
+
+  it('moves which days count as rest', () => {
+    const berlin = toRunningLoadEntries(sessions, 'Europe/Berlin');
+    const auckland = toRunningLoadEntries(sessions, 'Pacific/Auckland');
+
+    expect(assessRest(berlin, '2026-05-07').restDays).not.toContain('2026-05-04');
+    expect(assessRest(auckland, '2026-05-07').restDays).toContain('2026-05-04');
+  });
+
+  it('re-buckets the volume as well as the load', () => {
+    expect(toRunningVolumeEntries(sessions, 'Europe/Berlin')).toEqual([
+      { localDate: '2026-05-04', distanceM: 12_000 },
+      { localDate: '2026-05-05', distanceM: 9000 },
+      { localDate: '2026-05-07', distanceM: 15_000 },
+    ]);
+    expect(toRunningVolumeEntries(sessions, 'Pacific/Auckland')).toEqual([
+      { localDate: '2026-05-05', distanceM: 21_000 },
+      { localDate: '2026-05-07', distanceM: 15_000 },
+    ]);
+  });
+});
