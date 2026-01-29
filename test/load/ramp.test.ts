@@ -69,3 +69,27 @@ describe('rampCeilingM', () => {
     expect(rampCeilingM(40_000)).toBe(44_000);
   });
 });
+
+describe('rampHeadroomM', () => {
+  it('says how much is left in the week', () => {
+    const entries = [
+      { localDate: '2026-05-04', distanceM: 40_000 },
+      { localDate: '2026-05-11', distanceM: 30_000 },
+    ];
+    expect(rampHeadroomM(entries, '2026-05-17')).toBe(14_000);
+  });
+
+  it('says nothing is left once the cap has been passed', () => {
+    const entries = [
+      { localDate: '2026-05-04', distanceM: 40_000 },
+      { localDate: '2026-05-11', distanceM: 50_000 },
+    ];
+    expect(rampHeadroomM(entries, '2026-05-17')).toBe(0);
+  });
+
+  it('is unbounded for an athlete with no week behind them', () => {
+    expect(rampHeadroomM([{ localDate: '2026-05-11', distanceM: 30_000 }], '2026-05-17')).toBe(
+      Number.POSITIVE_INFINITY,
+    );
+  });
+});
