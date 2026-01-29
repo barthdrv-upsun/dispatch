@@ -69,3 +69,15 @@ describe('assessTaper', () => {
     expect(verdict.compliant).toBe(true);
   });
 });
+
+describe('taperTargetM', () => {
+  it('caps the week at last week inside the taper', () => {
+    expect(taperTargetM(twoWeeks(60_000, 45_000), '2026-05-22', RACE)).toBe(60_000);
+  });
+
+  it('has no ceiling outside the taper', () => {
+    expect(taperTargetM(twoWeeks(60_000, 45_000), '2026-05-08', RACE)).toBe(
+      Number.POSITIVE_INFINITY,
+    );
+  });
+});
