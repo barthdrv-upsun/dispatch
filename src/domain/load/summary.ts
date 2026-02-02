@@ -45,3 +45,20 @@ export function weekSummary(
     restDays: days.filter((day) => !loaded.has(day)).length,
   };
 }
+
+/**
+ * The last `weeks` rolling weeks, most recent first. Useful for the "what has
+ * this athlete actually been doing" panel.
+ */
+export function recentWeeks(
+  loadEntries: readonly LoadEntry[],
+  volumeEntries: readonly VolumeEntry[],
+  asOf: LocalDate,
+  weeks = 4,
+): WeekSummary[] {
+  const out: WeekSummary[] = [];
+  for (let back = 0; back < weeks; back += 1) {
+    out.push(weekSummary(loadEntries, volumeEntries, addLocalDays(asOf, -back * ACUTE_DAYS)));
+  }
+  return out;
+}
