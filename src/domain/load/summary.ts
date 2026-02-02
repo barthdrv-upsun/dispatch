@@ -62,3 +62,10 @@ export function recentWeeks(
   }
   return out;
 }
+
+export function biggestWeek(summaries: readonly WeekSummary[]): WeekSummary | null {
+  return summaries.reduce<WeekSummary | null>(
+    (best, week) => (best === null || week.volumeKm > best.volumeKm ? week : best),
+    null,
+  );
+}
