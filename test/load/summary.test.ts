@@ -46,3 +46,15 @@ describe('weekSummary', () => {
     expect(week.restDays).toBe(7);
   });
 });
+
+describe('recentWeeks', () => {
+  it('walks back a week at a time, most recent first', () => {
+    const weeks = recentWeeks(loadEntries, volumeEntries, '2026-01-18', 2);
+    expect(weeks.map((week) => week.to)).toEqual(['2026-01-18', '2026-01-11']);
+    expect(weeks[1]?.load).toBe(230);
+  });
+
+  it('returns as many weeks as it was asked for', () => {
+    expect(recentWeeks(loadEntries, volumeEntries, '2026-01-18', 6)).toHaveLength(6);
+  });
+});
