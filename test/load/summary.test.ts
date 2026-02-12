@@ -58,3 +58,14 @@ describe('recentWeeks', () => {
     expect(recentWeeks(loadEntries, volumeEntries, '2026-01-18', 6)).toHaveLength(6);
   });
 });
+
+describe('biggestWeek', () => {
+  it('picks the week with the most distance in it', () => {
+    const weeks = recentWeeks(loadEntries, volumeEntries, '2026-01-18', 3);
+    expect(biggestWeek(weeks)?.to).toBe('2026-01-18');
+  });
+
+  it('has nothing to pick from an empty list', () => {
+    expect(biggestWeek([])).toBeNull();
+  });
+});
