@@ -89,3 +89,11 @@ export interface ActivitySourceResult {
   sourceId: string;
   activities: StravaActivity[];
 }
+
+/** What the subscription endpoint hands back when we register the webhook. */
+export interface StravaSubscription {
+  id?: number;
+  callback_url?: string;
+  created_at?: string;
+  updated_at?: string;
+}
