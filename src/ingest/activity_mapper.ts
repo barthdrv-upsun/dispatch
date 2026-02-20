@@ -141,3 +141,19 @@ export class ActivityMapper {
     return Math.round(effort);
   }
 }
+
+/**
+ * Treadmill runs come through with the trainer flag set and, more often than
+ * not, no distance at all - the belt does not know how far you went. Worth
+ * knowing about because the distance-based load fallback is useless for them.
+ */
+export function looksLikeTreadmill(activity: StravaActivity | null | undefined): boolean {
+  if (!activity) {
+    return false;
+  }
+  if (activity.trainer === true) {
+    return true;
+  }
+  const sport = activity.sport_type || activity.type;
+  return sport === 'VirtualRun' || sport === 'TreadmillRun';
+}
