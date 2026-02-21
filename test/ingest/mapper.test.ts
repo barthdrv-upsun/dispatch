@@ -121,3 +121,19 @@ describe('map', () => {
     expect(result.ok && result.session.completedAt.toISOString()).toBe('2025-07-01T05:42:11.000Z');
   });
 });
+
+describe('looksLikeTreadmill', () => {
+  it('spots the trainer flag', () => {
+    expect(looksLikeTreadmill({ id: 1, sport_type: 'Run', trainer: true })).toBe(true);
+  });
+
+  it('spots the virtual sport types', () => {
+    expect(looksLikeTreadmill({ id: 1, sport_type: 'VirtualRun' })).toBe(true);
+    expect(looksLikeTreadmill(fixture(14880019))).toBe(true);
+  });
+
+  it('leaves an outdoor run alone', () => {
+    expect(looksLikeTreadmill(fixture(14880010))).toBe(false);
+    expect(looksLikeTreadmill(null)).toBe(false);
+  });
+});
