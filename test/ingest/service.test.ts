@@ -216,3 +216,26 @@ describe('syncAthlete', () => {
     await expect(sync(service, 'athlete-a')).rejects.toThrow('without an access token');
   });
 });
+
+describe('a batch with nothing usable in it', () => {
+  it('reports what it considered and writes nothing', async () => {
+    const store = new MemoryIngestStore();
+    store.addLink(link());
+    const transport = scriptedTransport({
+      activities: [
+        { id: 10, sport_type: 'Ride', start_date: '2025-07-14T05:00:00Z' },
+        { id: 11, sport_type: 'Run' },
+        { sport_type: 'Run', start_date: '2025-07-14T05:00:00Z' },
+      ],
+    });
+    const service = new IngestService({
+      client: new StravaClient({ baseUrl: 'http://strava.test', clientId: 'x', clientSecret: 'y', transport }),
+      store,
+    });
+
+    const summary = await sync(service, 'athlete-a');
+    expect(summary.considered).toBe(3);
+    expect(summary.skipped).toBe(3);
+    expect(store.sessions).toHaveLength(0);
+  });
+});
