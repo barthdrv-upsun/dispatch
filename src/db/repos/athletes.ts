@@ -67,3 +67,31 @@ export function drizzleSquadRepo(db: Database): SquadRepo {
     },
   };
 }
+
+export function drizzleAthleteRepo(db: Database): AthleteRepo {
+  return {
+    async byId(athleteId) {
+      const rows = await db.select().from(athletes).where(eq(athletes.id, athleteId)).limit(1);
+      const row = rows[0];
+      return row ? toAthlete(row) : null;
+    },
+
+    /** Squad-scoped, and the only way to read more than one athlete. */
+    async bySquad(squadId) {
+      const rows = await db.select().from(athletes).where(eq(athletes.squadId, squadId));
+      return rows.map(toAthlete);
+    },
+
+    async save(athlete) {
+      await db
+        .update(athletes)
+        .set({
+          timezone: athlete.timezone,
+          state: athlete.state,
+          restingHr: athlete.restingHr,
+          maxHr: athlete.maxHr,
+        })
+        .where(eq(athletes.id, athlete.id));
+    },
+  };
+}
