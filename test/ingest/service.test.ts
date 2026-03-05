@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { StravaClient, type JsonTransport } from '../../src/ingest/strava_client.js';
-import { IngestService } from '../../src/ingest/ingest_service.js';
+import { StravaClient, type JsonTransport } from '../../src/legacy/ingest/strava_client.js';
+import { IngestService } from '../../src/legacy/ingest/ingest_service.js';
 import { MemoryIngestStore } from '../helpers/memory_ingest_store.js';
-import type { AthleteLink, IngestSummary, StravaActivity } from '../../src/ingest/types.js';
+import type { AthleteLink, IngestSummary, StravaActivity } from '../../src/legacy/ingest/types.js';
 import { sessionLoad } from '../../src/domain/load/session_load.js';
 
 const NOW = '2025-07-15T09:00:00Z';

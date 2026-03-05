@@ -1,4 +1,4 @@
-import { athleteLocalDay, instantFromWallClock } from '../lib/time.js';
+import { athleteLocalDay, instantFromWallClock } from '../../lib/time.js';
 import type { MappedSession, StravaActivity } from './types.js';
 
 /**

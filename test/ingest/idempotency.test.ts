@@ -3,10 +3,10 @@ import type { AddressInfo } from 'node:net';
 import type { FastifyInstance } from 'fastify';
 import { buildFakeStrava } from '../../src/fakes/strava/server.js';
 import { recordedDeliveries } from '../../src/fakes/strava/fixtures.js';
-import { IngestService } from '../../src/ingest/ingest_service.js';
-import { StravaClient } from '../../src/ingest/strava_client.js';
-import { WebhookProcessor } from '../../src/ingest/webhook.js';
-import type { AthleteLink, IngestOutcome } from '../../src/ingest/types.js';
+import { IngestService } from '../../src/legacy/ingest/ingest_service.js';
+import { StravaClient } from '../../src/legacy/ingest/strava_client.js';
+import { WebhookProcessor } from '../../src/legacy/ingest/webhook.js';
+import type { AthleteLink, IngestOutcome } from '../../src/legacy/ingest/types.js';
 import { MemoryIngestStore } from '../helpers/memory_ingest_store.js';
 
 let fake: FastifyInstance;

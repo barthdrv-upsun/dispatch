@@ -1,6 +1,6 @@
 import { and, desc, eq } from 'drizzle-orm';
-import type { Database } from '../db/client.js';
-import { athletes, sessions, stravaActivities, stravaLinks } from '../db/schema.js';
+import type { Database } from '../../db/client.js';
+import { athletes, sessions, stravaActivities, stravaLinks } from '../../db/schema.js';
 import type { IngestStore, LinkPatch } from './store.js';
 import type { AthleteLink, Callback, MappedSessionWithLoad } from './types.js';
 

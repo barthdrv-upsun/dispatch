@@ -1,5 +1,5 @@
-import type { IngestStore, LinkPatch } from '../../src/ingest/store.js';
-import type { AthleteLink, Callback, MappedSessionWithLoad } from '../../src/ingest/types.js';
+import type { IngestStore, LinkPatch } from '../../src/legacy/ingest/store.js';
+import type { AthleteLink, Callback, MappedSessionWithLoad } from '../../src/legacy/ingest/types.js';
 
 export type StoredSession = MappedSessionWithLoad & { id: string; stravaActivityId: number };
 

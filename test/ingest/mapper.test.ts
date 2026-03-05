@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ActivityMapper, looksLikeTreadmill } from '../../src/ingest/activity_mapper.js';
+import { ActivityMapper, looksLikeTreadmill } from '../../src/legacy/ingest/activity_mapper.js';
 import { recordedActivities } from '../../src/fakes/strava/fixtures.js';
-import type { StravaActivity } from '../../src/ingest/types.js';
+import type { StravaActivity } from '../../src/legacy/ingest/types.js';
 
 const mapper = new ActivityMapper('UTC');
 
