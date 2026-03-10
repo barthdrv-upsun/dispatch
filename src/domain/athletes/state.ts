@@ -14,3 +14,15 @@ export function canTransition(from: AthleteState, to: AthleteState): boolean {
   }
   return TRANSITIONS[from].includes(to);
 }
+
+/**
+ * State only moves along the edges above. `injured -> active` is allowed
+ * because an injury that turns out to be nothing gets withdrawn rather than
+ * cleared.
+ */
+export function transitionState(athlete: Athlete, to: AthleteState): Athlete {
+  if (!canTransition(athlete.state, to)) {
+    throw new ConflictError(`an athlete cannot go from ${athlete.state} to ${to}`);
+  }
+  return { ...athlete, state: to };
+}
