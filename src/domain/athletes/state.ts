@@ -26,3 +26,38 @@ export function transitionState(athlete: Athlete, to: AthleteState): Athlete {
   }
   return { ...athlete, state: to };
 }
+
+export function ageOn(athlete: Athlete, on: LocalDate): number {
+  const [bornYear, bornMonth, bornDay] = athlete.dateOfBirth.split('-').map(Number);
+  const [year, month, day] = on.split('-').map(Number);
+  if (
+    bornYear === undefined ||
+    bornMonth === undefined ||
+    bornDay === undefined ||
+    year === undefined ||
+    month === undefined ||
+    day === undefined
+  ) {
+    throw new ValidationError('date of birth and the reference day must both be YYYY-MM-DD');
+  }
+  const beforeBirthday = month < bornMonth || (month === bornMonth && day < bornDay);
+  return year - bornYear - (beforeBirthday ? 1 : 0);
+}
+
+/**
+ * Moving an athlete's timezone moves every day boundary they have. Sessions
+ * are re-bucketed from their timestamps, so nothing is rewritten - but the
+ * windows they fall in do change, and a coach should know that before they
+ * hit save.
+ */
+export function moveTimezone(athlete: Athlete, timeZone: string): Athlete {
+  if (!timeZone.includes('/')) {
+    throw new ValidationError('timezone must be an IANA name such as Europe/Berlin', { timeZone });
+  }
+  try {
+    athleteLocalDay(new Date(0), timeZone);
+  } catch {
+    throw new ValidationError(`${timeZone} is not a timezone this platform knows`, { timeZone });
+  }
+  return { ...athlete, timezone: timeZone };
+}
