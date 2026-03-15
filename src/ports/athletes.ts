@@ -11,3 +11,13 @@ export interface UserRepo {
   athleteIdFor(userId: string): Promise<string | null>;
   physioUserIds(squadId: string): Promise<string[]>;
 }
+
+export interface SquadRepo {
+  byId(squadId: string): Promise<Squad | null>;
+}
+
+export interface AthleteRepo {
+  byId(athleteId: string): Promise<Athlete | null>;
+  bySquad(squadId: string): Promise<Athlete[]>;
+  save(athlete: Athlete): Promise<void>;
+}
