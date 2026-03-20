@@ -61,3 +61,7 @@ export function moveTimezone(athlete: Athlete, timeZone: string): Athlete {
   }
   return { ...athlete, timezone: timeZone };
 }
+
+export function daysSince(day: LocalDate, asOf: LocalDate): number {
+  return localDaysBetween(day, asOf);
+}
