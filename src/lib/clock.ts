@@ -9,3 +9,11 @@ export interface Clock {
 export const systemClock: Clock = {
   now: () => new Date(),
 };
+
+export function fixedClock(at: Date | string): Clock {
+  const instant = typeof at === 'string' ? new Date(at) : at;
+  if (Number.isNaN(instant.getTime())) {
+    throw new RangeError(`fixedClock received an invalid instant: ${String(at)}`);
+  }
+  return { now: () => new Date(instant.getTime()) };
+}
