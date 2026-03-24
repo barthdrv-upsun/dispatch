@@ -59,3 +59,19 @@ describe('transitionState', () => {
     expect(original.state).toBe('active');
   });
 });
+
+describe('ageOn', () => {
+  it('counts a birthday that has been', () => {
+    expect(ageOn(athlete(), '2026-06-20')).toBe(32);
+    expect(ageOn(athlete(), '2026-08-01')).toBe(32);
+  });
+
+  it('does not count one that has not', () => {
+    expect(ageOn(athlete(), '2026-06-19')).toBe(31);
+    expect(ageOn(athlete(), '2026-01-01')).toBe(31);
+  });
+
+  it('refuses a date it cannot read', () => {
+    expect(() => ageOn(athlete({ dateOfBirth: 'sometime' }), '2026-06-20')).toThrow(ValidationError);
+  });
+});
