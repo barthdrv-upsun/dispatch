@@ -37,3 +37,25 @@ describe('canTransition', () => {
     expect(canTransition('active', 'active')).toBe(false);
   });
 });
+
+describe('transitionState', () => {
+  it('moves the athlete', () => {
+    expect(transitionState(athlete(), 'injured').state).toBe('injured');
+  });
+
+  it('refuses an impossible move and says which one', () => {
+    try {
+      transitionState(athlete(), 'returning');
+      expect.unreachable('active cannot go straight to returning');
+    } catch (err) {
+      expect(err).toBeInstanceOf(ConflictError);
+      expect((err as ConflictError).message).toContain('from active to returning');
+    }
+  });
+
+  it('does not mutate the athlete it was given', () => {
+    const original = athlete();
+    transitionState(original, 'injured');
+    expect(original.state).toBe('active');
+  });
+});
