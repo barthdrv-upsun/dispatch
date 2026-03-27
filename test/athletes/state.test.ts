@@ -75,3 +75,24 @@ describe('ageOn', () => {
     expect(() => ageOn(athlete({ dateOfBirth: 'sometime' }), '2026-06-20')).toThrow(ValidationError);
   });
 });
+
+describe('moveTimezone', () => {
+  it('moves the athlete', () => {
+    expect(moveTimezone(athlete(), 'Pacific/Auckland').timezone).toBe('Pacific/Auckland');
+  });
+
+  it('refuses something that is not an IANA name', () => {
+    expect(() => moveTimezone(athlete(), 'CEST')).toThrow(ValidationError);
+    expect(() => moveTimezone(athlete(), '')).toThrow(ValidationError);
+  });
+
+  it('refuses a zone this platform has never heard of', () => {
+    expect(() => moveTimezone(athlete(), 'Mars/Olympus_Mons')).toThrow(ValidationError);
+  });
+
+  it('does not mutate the athlete it was given', () => {
+    const original = athlete();
+    moveTimezone(original, 'Pacific/Auckland');
+    expect(original.timezone).toBe('Europe/Berlin');
+  });
+});
