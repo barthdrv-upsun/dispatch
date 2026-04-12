@@ -73,3 +73,21 @@ export function requireSelfOrCoach(actor: Actor, athleteId: string, squadId: str
   }
   throw new ForbiddenError(action, 'athlete');
 }
+
+/** Either coaching role in that squad. Drafting is open to both of them. */
+export function requireCoachInSquad(actor: Actor, squadId: string, action: string): void {
+  const coaches: readonly Role[] = ['head_coach', 'assistant_coach'];
+  if (actor.grants.some((grant) => grant.squadId === squadId && coaches.includes(grant.role))) {
+    return;
+  }
+  throw new ForbiddenError(action, 'assistant_coach');
+}
+
+/** Anyone with a reason to look at a squad: its coaches and its physio. */
+export function requireSquadAccess(actor: Actor, squadId: string, action: string): void {
+  const allowed: readonly Role[] = ['head_coach', 'assistant_coach', 'physio'];
+  if (actor.grants.some((grant) => grant.squadId === squadId && allowed.includes(grant.role))) {
+    return;
+  }
+  throw new ForbiddenError(action, 'assistant_coach');
+}
