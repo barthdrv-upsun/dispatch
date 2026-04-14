@@ -53,3 +53,39 @@ export function currentTemplate(
     .sort((a, b) => b.version - a.version);
   return live[0] ?? null;
 }
+
+/**
+ * An edit never rewrites a template. It writes the next version and stamps
+ * the old one, so that a block slot pinned to version 3 keeps meaning what it
+ * meant when the coach picked it.
+ */
+export function reviseTemplate(
+  previous: WorkoutTemplate,
+  changes: Partial<Pick<TemplateDraft, 'kind' | 'prescription' | 'loadFactor'>>,
+  at: Date,
+): { superseded: WorkoutTemplate; revision: Omit<WorkoutTemplate, 'id'> } {
+  const kind = changes.kind ?? previous.kind;
+  if (!isTemplateKind(kind)) {
+    throw new ValidationError(`${kind} is not a workout kind`, { kind });
+  }
+  const draft: TemplateDraft = {
+    squadId: previous.squadId,
+    code: previous.code,
+    kind,
+    prescription: changes.prescription ?? previous.prescription,
+    loadFactor: changes.loadFactor ?? previous.loadFactor,
+  };
+  validateTemplateDraft(draft);
+  return {
+    superseded: { ...previous, supersededAt: at },
+    revision: {
+      squadId: previous.squadId,
+      code: previous.code,
+      version: previous.version + 1,
+      kind: kind as TemplateKind,
+      prescription: draft.prescription,
+      loadFactor: draft.loadFactor,
+      supersededAt: null,
+    },
+  };
+}
