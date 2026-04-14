@@ -89,3 +89,18 @@ export function reviseTemplate(
     },
   };
 }
+
+/**
+ * What a template is expected to cost before anyone has run it: the
+ * prescribed minutes scaled by the template's own load factor.
+ */
+export function prescribedLoad(template: WorkoutTemplate): number {
+  const prescription = template.prescription;
+  const minutes = prescription.durationS
+    ? prescription.durationS / 60
+    : prescription.distanceM
+      ? (prescription.distanceM / 1000) * 5
+      : 45;
+  const effort = prescription.targetEffort ?? 5;
+  return round2(minutes * effort * template.loadFactor);
+}
