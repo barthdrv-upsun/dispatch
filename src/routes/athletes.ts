@@ -1,93 +1,87 @@
 import type { FastifyInstance } from 'fastify';
-import { ForbiddenError, NotFoundError, ValidationError } from '../lib/errors.js';
-import { hasRoleInSquad, isSelf } from '../domain/authz.js';
-import type { AthleteRow } from '../athletes/athlete_service.js';
-import { actorFor, fromCallback, requiredParam, type RouteDeps } from './context.js';
+import { NotFoundError, ValidationError } from '../lib/errors.js';
+import { athleteLocalDay } from '../lib/time.js';
+import { requireRoleInSquad, requireSquadAccess } from '../domain/authz.js';
+import { assertCanReadAthlete, rosterFor } from '../domain/athletes/roster.js';
+import { moveTimezone, transitionState } from '../domain/athletes/state.js';
+import { athleteSummaries, athleteSummary } from '../domain/athletes/view.js';
+import type { AthleteState } from '../domain/athletes/types.js';
+import { actorFor, requiredParam, type RouteDeps } from './context.js';
 
-function canRead(actor: Parameters<typeof isSelf>[0], athlete: AthleteRow): boolean {
-  if (isSelf(actor, athlete.id)) {
-    return true;
-  }
-  return (
-    hasRoleInSquad(actor, athlete.squadId, 'head_coach') ||
-    hasRoleInSquad(actor, athlete.squadId, 'assistant_coach') ||
-    hasRoleInSquad(actor, athlete.squadId, 'physio')
-  );
-}
+const STATES: readonly AthleteState[] = ['active', 'injured', 'returning'];
 
 export function athleteRoutes(app: FastifyInstance, deps: RouteDeps): void {
-  app.get('/athletes/:athleteId', async function (request, reply) {
-    const actor = await actorFor(request, deps);
+  const { repos, clock } = deps;
+
+  app.get('/athletes/:athleteId', async (request, reply) => {
+    const actor = await actorFor(request, repos);
     const athleteId = requiredParam(request.params, 'athleteId');
-    const athlete = await fromCallback<AthleteRow>(function (cb) {
-      deps.athletes.get(athleteId, cb);
-    });
+    const athlete = await repos.athletes.byId(athleteId);
     if (!athlete) {
-      throw new NotFoundError('no athlete ' + athleteId);
+      throw new NotFoundError(`no athlete ${athleteId}`);
     }
-    if (!canRead(actor, athlete)) {
-      throw new ForbiddenError('read an athlete', 'head_coach');
-    }
-    return reply.code(200).send({ athlete: athlete });
+    assertCanReadAthlete(actor, athlete, 'read an athlete');
+    return reply.code(200).send({
+      athlete: athleteSummary(athlete),
+      today: athleteLocalDay(clock.now(), athlete.timezone),
+    });
   });
 
-  app.get('/squads/:squadId/athletes', async function (request, reply) {
-    const actor = await actorFor(request, deps);
+  /**
+   * A roster read is scoped to the squad in the path *and* to a grant the
+   * caller holds in that squad. There is no route here that returns athletes
+   * across squads.
+   */
+  app.get('/squads/:squadId/athletes', async (request, reply) => {
+    const actor = await actorFor(request, repos);
     const squadId = requiredParam(request.params, 'squadId');
-    if (
-      !hasRoleInSquad(actor, squadId, 'head_coach') &&
-      !hasRoleInSquad(actor, squadId, 'assistant_coach') &&
-      !hasRoleInSquad(actor, squadId, 'physio')
-    ) {
-      throw new ForbiddenError('read a squad roster', 'assistant_coach');
-    }
-    const athletes = await fromCallback<AthleteRow[]>(function (cb) {
-      deps.athletes.roster(squadId, cb);
-    });
-    return reply.code(200).send({ squadId: squadId, athletes: athletes || [] });
+    requireSquadAccess(actor, squadId, 'read a squad roster');
+    const athletes = await repos.athletes.bySquad(squadId);
+    return reply.code(200).send({ squadId, athletes: athleteSummaries(rosterFor(athletes, squadId)) });
   });
 
-  app.patch('/athletes/:athleteId/state', async function (request, reply) {
-    const actor = await actorFor(request, deps);
+  app.patch('/athletes/:athleteId/state', async (request, reply) => {
+    const actor = await actorFor(request, repos);
     const athleteId = requiredParam(request.params, 'athleteId');
-    const athlete = await fromCallback<AthleteRow>(function (cb) {
-      deps.athletes.get(athleteId, cb);
-    });
+    const athlete = await repos.athletes.byId(athleteId);
     if (!athlete) {
-      throw new NotFoundError('no athlete ' + athleteId);
+      throw new NotFoundError(`no athlete ${athleteId}`);
     }
-    if (!hasRoleInSquad(actor, athlete.squadId, 'head_coach')) {
-      throw new ForbiddenError("change an athlete's state", 'head_coach');
+    requireRoleInSquad(actor, athlete.squadId, 'head_coach', "change an athlete's state");
+
+    const body = (request.body ?? {}) as { state?: string };
+    const next = body.state ?? '';
+    if (!(STATES as readonly string[]).includes(next)) {
+      throw new ValidationError(`state must be one of ${STATES.join(', ')}`, { state: next });
     }
-    const body = (request.body || {}) as { state?: string };
-    if (!body.state) {
-      throw new ValidationError('state is required');
-    }
-    await fromCallback<void>(function (cb) {
-      deps.athletes.setState(athleteId, body.state as string, cb);
-    });
-    return reply.code(200).send({ athleteId: athleteId, state: body.state });
+    const updated = transitionState(athlete, next as AthleteState);
+    await repos.athletes.save(updated);
+    return reply.code(200).send({ athlete: athleteSummary(updated) });
   });
 
-  app.patch('/athletes/:athleteId/timezone', async function (request, reply) {
-    const actor = await actorFor(request, deps);
+  /**
+   * Moving an athlete's zone re-cuts every day boundary they have, so the
+   * response says which local day they are on now.
+   */
+  app.patch('/athletes/:athleteId/timezone', async (request, reply) => {
+    const actor = await actorFor(request, repos);
     const athleteId = requiredParam(request.params, 'athleteId');
-    const athlete = await fromCallback<AthleteRow>(function (cb) {
-      deps.athletes.get(athleteId, cb);
-    });
+    const athlete = await repos.athletes.byId(athleteId);
     if (!athlete) {
-      throw new NotFoundError('no athlete ' + athleteId);
+      throw new NotFoundError(`no athlete ${athleteId}`);
     }
-    if (!canRead(actor, athlete)) {
-      throw new ForbiddenError("change an athlete's timezone", 'head_coach');
-    }
-    const body = (request.body || {}) as { timezone?: string };
+    assertCanReadAthlete(actor, athlete, "change an athlete's timezone");
+
+    const body = (request.body ?? {}) as { timezone?: string };
     if (!body.timezone) {
       throw new ValidationError('timezone is required');
     }
-    await fromCallback<void>(function (cb) {
-      deps.athletes.moveToTimezone(athleteId, body.timezone as string, cb);
+    const updated = moveTimezone(athlete, body.timezone);
+    await repos.athletes.save(updated);
+    return reply.code(200).send({
+      athlete: athleteSummary(updated),
+      previousTimezone: athlete.timezone,
+      today: athleteLocalDay(clock.now(), updated.timezone),
     });
-    return reply.code(200).send({ athleteId: athleteId, timezone: body.timezone });
   });
 }
