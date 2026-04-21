@@ -22,3 +22,18 @@ export function visibleSquadIds(actor: Actor): string[] {
   }
   return [...squads];
 }
+
+export function assertCanReadAthlete(actor: Actor, athlete: Athlete, action: string): void {
+  if (isSelf(actor, athlete.id)) {
+    return;
+  }
+  const squadId = athlete.squadId;
+  if (
+    hasRoleInSquad(actor, squadId, 'head_coach') ||
+    hasRoleInSquad(actor, squadId, 'assistant_coach') ||
+    hasRoleInSquad(actor, squadId, 'physio')
+  ) {
+    return;
+  }
+  throw new ForbiddenError(action, 'head_coach');
+}
