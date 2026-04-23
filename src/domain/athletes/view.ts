@@ -16,3 +16,18 @@ export type AthleteSummary = {
   restingHr: number | null;
   maxHr: number | null;
 };
+
+export function athleteSummary(athlete: Athlete): AthleteSummary {
+  return {
+    id: athlete.id,
+    squadId: athlete.squadId,
+    timezone: athlete.timezone,
+    state: athlete.state,
+    restingHr: athlete.restingHr,
+    maxHr: athlete.maxHr,
+  };
+}
+
+export function athleteSummaries(athletes: readonly Athlete[]): AthleteSummary[] {
+  return athletes.map(athleteSummary);
+}
