@@ -82,3 +82,68 @@ export function athlete(overrides: Partial<Athlete> & Pick<Athlete, 'id' | 'squa
     ...overrides,
   };
 }
+
+export function addTemplate(
+  world: MemoryWorld,
+  overrides: {
+    id: string;
+    squadId: string;
+    code: string;
+    kind: TemplateKind;
+    version?: number;
+    loadFactor?: string;
+    prescription?: Prescription;
+  },
+): void {
+  world.templates.push({
+    id: overrides.id,
+    squadId: overrides.squadId,
+    code: overrides.code,
+    version: overrides.version ?? 1,
+    kind: overrides.kind,
+    prescription: overrides.prescription ?? { summary: '45 minutes easy', durationS: 2700, targetEffort: 3 },
+    loadFactor: overrides.loadFactor ?? '1.00',
+    supersededAt: null,
+  });
+}
+
+export function addSession(
+  world: MemoryWorld,
+  input: {
+    athleteId: string;
+    completedAt: string;
+    load?: number | null;
+    distanceM?: number | null;
+    templateId?: string | null;
+  },
+): void {
+  world.sessions.push({
+    id: `session-${String(world.sessions.length + 1).padStart(3, '0')}`,
+    athleteId: input.athleteId,
+    planId: null,
+    templateId: input.templateId ?? null,
+    scheduledFor: null,
+    completedAt: new Date(input.completedAt),
+    distanceM: input.distanceM ?? 10_000,
+    durationS: 3000,
+    avgHr: 145,
+    perceivedEffort: 4,
+    load: input.load ?? 50,
+    shoeId: null,
+    source: 'manual',
+  });
+}
+
+export function inject(
+  app: FastifyInstance,
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH',
+  url: string,
+  options: { as?: string; body?: unknown } = {},
+) {
+  return app.inject({
+    method,
+    url,
+    headers: options.as ? { 'x-user-id': options.as } : {},
+    payload: options.body === undefined ? undefined : (options.body as object),
+  });
+}
