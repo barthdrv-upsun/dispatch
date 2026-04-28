@@ -90,3 +90,61 @@ describe('nextTemplateVersion', () => {
     expect(nextTemplateVersion(existing, 'EASY-45')).toBe(1);
   });
 });
+
+describe('currentTemplate', () => {
+  it('returns the live version', () => {
+    const existing = [
+      template({ id: 'a', version: 1, supersededAt: new Date('2026-01-01T00:00:00Z') }),
+      template({ id: 'b', version: 2 }),
+    ];
+    expect(currentTemplate(existing, 'TEMPO-4X8')?.id).toBe('b');
+  });
+
+  it('returns nothing when every version has been superseded', () => {
+    const existing = [template({ id: 'a', supersededAt: new Date('2026-01-01T00:00:00Z') })];
+    expect(currentTemplate(existing, 'TEMPO-4X8')).toBeNull();
+  });
+
+  it('returns nothing for a code it has never seen', () => {
+    expect(currentTemplate([template()], 'NOPE-1')).toBeNull();
+  });
+});
+
+describe('reviseTemplate', () => {
+  const at = new Date('2026-05-04T10:00:00Z');
+
+  it('writes the next version and stamps the old one', () => {
+    const { superseded, revision } = reviseTemplate(template(), { loadFactor: 1.5 }, at);
+    expect(revision.version).toBe(2);
+    expect(revision.loadFactor).toBe(1.5);
+    expect(revision.supersededAt).toBeNull();
+    expect(superseded.supersededAt).toEqual(at);
+    expect(superseded.version).toBe(1);
+  });
+
+  it('keeps the code and the squad', () => {
+    const { revision } = reviseTemplate(template(), { kind: 'interval' }, at);
+    expect(revision.code).toBe('TEMPO-4X8');
+    expect(revision.squadId).toBe(SQUAD);
+    expect(revision.kind).toBe('interval');
+  });
+
+  it('carries forward anything the revision does not mention', () => {
+    const { revision } = reviseTemplate(template(), {}, at);
+    expect(revision.kind).toBe('tempo');
+    expect(revision.loadFactor).toBe(1.35);
+    expect(revision.prescription.summary).toBe('4x8 at threshold');
+  });
+
+  it('refuses a revision that would make the template invalid', () => {
+    expect(() => reviseTemplate(template(), { loadFactor: 9 }, at)).toThrow(ValidationError);
+    expect(() => reviseTemplate(template(), { kind: 'pilates' }, at)).toThrow(ValidationError);
+  });
+
+  it('does not mutate the template it was given', () => {
+    const original = template();
+    reviseTemplate(original, { loadFactor: 2 }, at);
+    expect(original.supersededAt).toBeNull();
+    expect(original.loadFactor).toBe(1.35);
+  });
+});
