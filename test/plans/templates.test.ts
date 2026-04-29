@@ -148,3 +148,23 @@ describe('reviseTemplate', () => {
     expect(original.loadFactor).toBe(1.35);
   });
 });
+
+describe('prescribedLoad', () => {
+  it('scales prescribed minutes by effort and the load factor', () => {
+    expect(prescribedLoad(template())).toBe(567);
+  });
+
+  it('reads a distance prescription when there is no duration', () => {
+    const long = template({
+      kind: 'long',
+      loadFactor: 1.2,
+      prescription: { summary: '25km steady', distanceM: 25_000, targetEffort: 5 },
+    });
+    expect(prescribedLoad(long)).toBe(750);
+  });
+
+  it('falls back to a nominal session when the prescription says neither', () => {
+    const vague = template({ prescription: { summary: 'coach will tell you' }, loadFactor: 1 });
+    expect(prescribedLoad(vague)).toBe(225);
+  });
+});
