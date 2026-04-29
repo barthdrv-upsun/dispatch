@@ -134,3 +134,35 @@ describe('PATCH /athletes/:athleteId/state', () => {
     expect(response.statusCode).toBe(409);
   });
 });
+
+describe('PATCH /athletes/:athleteId/timezone', () => {
+  it('moves the athlete and says which day they are on now', async () => {
+    const response = await inject(app, 'PATCH', `/athletes/${ATHLETE_A}/timezone`, {
+      as: ATHLETE_A_USER,
+      body: { timezone: 'Pacific/Auckland' },
+    });
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as { previousTimezone: string; today: string };
+    expect(body.previousTimezone).toBe('Europe/Berlin');
+    // 08:00Z on the 15th is already the 15th in Berlin and the 15th in
+    // Auckland; the point is that the response says whose day it is.
+    expect(body.today).toBe('2026-06-15');
+    expect(world.athletes.find((entry) => entry.id === ATHLETE_A)?.timezone).toBe('Pacific/Auckland');
+  });
+
+  it('refuses a zone that is not a zone', async () => {
+    const response = await inject(app, 'PATCH', `/athletes/${ATHLETE_A}/timezone`, {
+      as: HEAD_COACH_A,
+      body: { timezone: 'CEST' },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('refuses a coach from another squad', async () => {
+    const response = await inject(app, 'PATCH', `/athletes/${ATHLETE_A}/timezone`, {
+      as: HEAD_COACH_B,
+      body: { timezone: 'Pacific/Auckland' },
+    });
+    expect(response.statusCode).toBe(403);
+  });
+});
