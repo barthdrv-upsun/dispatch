@@ -66,3 +66,71 @@ describe('GET /athletes/:athleteId', () => {
     expect(response.statusCode).toBe(404);
   });
 });
+
+describe('GET /squads/:squadId/athletes', () => {
+  it('returns only that squad\'s athletes', async () => {
+    const response = await inject(app, 'GET', `/squads/${SQUAD_A}/athletes`, { as: HEAD_COACH_A });
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as { athletes: Array<{ id: string; squadId: string }> };
+    expect(body.athletes.map((entry) => entry.id)).toEqual([ATHLETE_A, 'athlete-a2']);
+    expect(body.athletes.every((entry) => entry.squadId === SQUAD_A)).toBe(true);
+  });
+
+  it('does not leak another squad\'s roster to a coach who asks for it', async () => {
+    const response = await inject(app, 'GET', `/squads/${SQUAD_B}/athletes`, { as: HEAD_COACH_A });
+    expect(response.statusCode).toBe(403);
+    expect(response.body).not.toContain(ATHLETE_B);
+  });
+
+  it('lets the physio read either squad', async () => {
+    expect((await inject(app, 'GET', `/squads/${SQUAD_A}/athletes`, { as: PHYSIO })).statusCode).toBe(200);
+    expect((await inject(app, 'GET', `/squads/${SQUAD_B}/athletes`, { as: PHYSIO })).statusCode).toBe(200);
+  });
+
+  it('refuses an athlete asking for the whole roster', async () => {
+    const response = await inject(app, 'GET', `/squads/${SQUAD_A}/athletes`, { as: ATHLETE_A_USER });
+    expect(response.statusCode).toBe(403);
+  });
+
+  it('sends no dates of birth', async () => {
+    const response = await inject(app, 'GET', `/squads/${SQUAD_A}/athletes`, { as: ASSISTANT_A });
+    expect(response.body).not.toContain('1994');
+    expect(response.body).not.toContain('1999');
+  });
+});
+
+describe('PATCH /athletes/:athleteId/state', () => {
+  it('lets the head coach mark an athlete injured', async () => {
+    const response = await inject(app, 'PATCH', `/athletes/${ATHLETE_A}/state`, {
+      as: HEAD_COACH_A,
+      body: { state: 'injured' },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(world.athletes.find((entry) => entry.id === ATHLETE_A)?.state).toBe('injured');
+  });
+
+  it('refuses an assistant coach', async () => {
+    const response = await inject(app, 'PATCH', `/athletes/${ATHLETE_A}/state`, {
+      as: ASSISTANT_A,
+      body: { state: 'injured' },
+    });
+    expect(response.statusCode).toBe(403);
+    expect(world.athletes.find((entry) => entry.id === ATHLETE_A)?.state).toBe('active');
+  });
+
+  it('refuses a state that is not one of the three', async () => {
+    const response = await inject(app, 'PATCH', `/athletes/${ATHLETE_A}/state`, {
+      as: HEAD_COACH_A,
+      body: { state: 'tired' },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('refuses a transition the athlete cannot make', async () => {
+    const response = await inject(app, 'PATCH', `/athletes/${ATHLETE_A}/state`, {
+      as: HEAD_COACH_A,
+      body: { state: 'returning' },
+    });
+    expect(response.statusCode).toBe(409);
+  });
+});
