@@ -45,3 +45,38 @@ function hasEitherCoachRole(actor: Actor, squadId: string): boolean {
       grant.squadId === squadId && (grant.role === 'head_coach' || grant.role === 'assistant_coach'),
   );
 }
+
+/**
+ * R5. Only a head coach publishes, and only a block with something in every
+ * week of it.
+ *
+ * Takes a Clock so the published_at stamp is testable.
+ */
+export function publishBlock(
+  block: TrainingBlock,
+  slots: readonly BlockSlot[],
+  actor: Actor,
+  clock: Clock,
+): TrainingBlock {
+  requireRoleInSquad(actor, block.squadId, 'head_coach', 'publish a training block');
+  if (block.state === 'published') {
+    throw new ConflictError(`block ${block.name} v${block.version} is already published`);
+  }
+  const gaps = emptyWeeks(block, slots);
+  if (gaps.length > 0) {
+    throw new ValidationError('every week of a block needs at least one session before it can be published', {
+      emptyWeeks: gaps,
+    });
+  }
+  return {
+    ...block,
+    state: 'published',
+    publishedBy: actor.userId,
+    publishedAt: clock.now(),
+  };
+}
+
+export type BlockRevision = {
+  revision: Omit<TrainingBlock, 'id'>;
+  slots: Array<Omit<BlockSlot, 'blockId'>>;
+};
