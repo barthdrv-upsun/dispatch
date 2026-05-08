@@ -80,3 +80,42 @@ export type BlockRevision = {
   revision: Omit<TrainingBlock, 'id'>;
   slots: Array<Omit<BlockSlot, 'blockId'>>;
 };
+
+/**
+ * R5. Editing a published block does not touch it. It produces the next
+ * version, in draft, carrying a copy of the slots - which is why a plan that
+ * pinned version 2 keeps seeing version 2 for ever.
+ */
+export function reviseBlock(
+  block: TrainingBlock,
+  slots: readonly BlockSlot[],
+  changes: Partial<Pick<BlockDraft, 'name' | 'weeks'>>,
+): BlockRevision {
+  const weeks = changes.weeks ?? block.weeks;
+  if (!Number.isInteger(weeks) || weeks < 1 || weeks > MAX_BLOCK_WEEKS) {
+    throw new ValidationError(`a block runs for 1 to ${MAX_BLOCK_WEEKS} weeks`, { weeks });
+  }
+  const name = (changes.name ?? block.name).trim();
+  if (name.length < 3) {
+    throw new ValidationError('a block needs a name of at least three characters');
+  }
+  return {
+    revision: {
+      squadId: block.squadId,
+      name,
+      version: block.version + 1,
+      weeks,
+      state: 'draft',
+      publishedBy: null,
+      publishedAt: null,
+    },
+    slots: slots
+      .filter((slot) => slot.week <= weeks)
+      .map((slot) => ({
+        week: slot.week,
+        day: slot.day,
+        templateId: slot.templateId,
+        templateVersion: slot.templateVersion,
+      })),
+  };
+}
