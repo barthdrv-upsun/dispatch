@@ -22,3 +22,19 @@ export function validateSlot(
     });
   }
 }
+
+/**
+ * Slots are keyed by (block, week, day), so putting a template on a day that
+ * already has one replaces it.
+ */
+export function upsertSlot(slots: readonly BlockSlot[], slot: BlockSlot): BlockSlot[] {
+  const rest = slots.filter(
+    (existing) =>
+      !(existing.blockId === slot.blockId && existing.week === slot.week && existing.day === slot.day),
+  );
+  return [...rest, slot].sort((a, b) => (a.week === b.week ? a.day - b.day : a.week - b.week));
+}
+
+export function removeSlot(slots: readonly BlockSlot[], week: number, day: number): BlockSlot[] {
+  return slots.filter((slot) => !(slot.week === week && slot.day === day));
+}
