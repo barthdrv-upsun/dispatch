@@ -38,3 +38,7 @@ export function upsertSlot(slots: readonly BlockSlot[], slot: BlockSlot): BlockS
 export function removeSlot(slots: readonly BlockSlot[], week: number, day: number): BlockSlot[] {
   return slots.filter((slot) => !(slot.week === week && slot.day === day));
 }
+
+export function slotsForWeek(slots: readonly BlockSlot[], week: number): BlockSlot[] {
+  return slots.filter((slot) => slot.week === week).sort((a, b) => a.day - b.day);
+}
