@@ -42,3 +42,13 @@ export function removeSlot(slots: readonly BlockSlot[], week: number, day: numbe
 export function slotsForWeek(slots: readonly BlockSlot[], week: number): BlockSlot[] {
   return slots.filter((slot) => slot.week === week).sort((a, b) => a.day - b.day);
 }
+
+export function emptyWeeks(block: TrainingBlock, slots: readonly BlockSlot[]): number[] {
+  const weeks: number[] = [];
+  for (let week = 1; week <= block.weeks; week += 1) {
+    if (slotsForWeek(slots, week).length === 0) {
+      weeks.push(week);
+    }
+  }
+  return weeks;
+}
