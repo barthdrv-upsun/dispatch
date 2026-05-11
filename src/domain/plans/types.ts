@@ -35,3 +35,29 @@ export type WorkoutTemplate = {
 };
 
 export type { Prescription };
+
+export type BlockState = 'draft' | 'published';
+
+export type TrainingBlock = {
+  id: string;
+  squadId: string;
+  name: string;
+  version: number;
+  weeks: number;
+  state: BlockState;
+  publishedBy: string | null;
+  publishedAt: Date | null;
+};
+
+export type BlockSlot = {
+  blockId: string;
+  week: number;
+  day: number;
+  templateId: string;
+  templateVersion: number;
+};
+
+export type BlockWithSlots = {
+  block: TrainingBlock;
+  slots: BlockSlot[];
+};
