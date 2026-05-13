@@ -2,6 +2,7 @@ import type { Database } from '../client.js';
 import { drizzleUserRepo, drizzleSquadRepo, drizzleAthleteRepo } from './athletes.js';
 import { drizzleSessionRepo } from './sessions.js';
 import { drizzleTemplateRepo } from './templates.js';
+import { drizzleBlockRepo } from './blocks.js';
 import type { Repositories } from '../../ports/index.js';
 
 export * from './athletes.js';
@@ -17,5 +18,6 @@ export function createRepositories(db: Database): Repositories {
     athletes: drizzleAthleteRepo(db),
     sessions: drizzleSessionRepo(db),
     templates: drizzleTemplateRepo(db),
+    blocks: drizzleBlockRepo(db),
   };
 }
