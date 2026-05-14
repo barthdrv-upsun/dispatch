@@ -4,7 +4,7 @@ export * from './plans.js';
 
 import type { UserRepo, SquadRepo, AthleteRepo } from './athletes.js';
 import type { SessionRepo } from './sessions.js';
-import type { TemplateRepo } from './plans.js';
+import type { TemplateRepo, BlockRepo } from './plans.js';
 
 /**
  * The whole surface the handlers are allowed to touch. A route gets this and
@@ -17,4 +17,5 @@ export type Repositories = {
   athletes: AthleteRepo;
   sessions: SessionRepo;
   templates: TemplateRepo;
+  blocks: BlockRepo;
 };
