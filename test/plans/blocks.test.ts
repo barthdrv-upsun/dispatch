@@ -136,3 +136,41 @@ describe('publishBlock', () => {
     expect(original.publishedAt).toBeNull();
   });
 });
+
+describe('reviseBlock', () => {
+  it('produces the next version, back in draft', () => {
+    const published = block({ state: 'published', version: 2, publishedBy: 'user-head' });
+    const { revision } = reviseBlock(published, fullSlots, { name: 'Autumn base v2' });
+    expect(revision.version).toBe(3);
+    expect(revision.state).toBe('draft');
+    expect(revision.publishedBy).toBeNull();
+    expect(revision.publishedAt).toBeNull();
+    expect(revision.name).toBe('Autumn base v2');
+  });
+
+  it('leaves the version it was given exactly as it was', () => {
+    const published = block({ state: 'published', version: 2, publishedAt: new Date('2026-01-01T00:00:00Z') });
+    reviseBlock(published, fullSlots, { weeks: 3 });
+    expect(published.version).toBe(2);
+    expect(published.state).toBe('published');
+  });
+
+  it('carries the slots across', () => {
+    const { slots } = reviseBlock(block(), fullSlots, {});
+    expect(slots).toEqual([
+      { week: 1, day: 1, templateId: 'template-1', templateVersion: 1 },
+      { week: 2, day: 1, templateId: 'template-1', templateVersion: 1 },
+    ]);
+  });
+
+  it('drops slots that fall off the end of a shorter block', () => {
+    const { revision, slots } = reviseBlock(block({ weeks: 3 }), [slot(1, 1), slot(3, 2)], { weeks: 2 });
+    expect(revision.weeks).toBe(2);
+    expect(slots.map((s) => s.week)).toEqual([1]);
+  });
+
+  it('refuses a revision that is not a block any more', () => {
+    expect(() => reviseBlock(block(), fullSlots, { weeks: 0 })).toThrow(ValidationError);
+    expect(() => reviseBlock(block(), fullSlots, { name: 'no' })).toThrow(ValidationError);
+  });
+});
