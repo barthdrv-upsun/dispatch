@@ -55,3 +55,29 @@ describe('validateSlot', () => {
     expect(() => validateSlot(block, { week: 1, day: 1 }, theirs)).toThrow(ValidationError);
   });
 });
+
+describe('upsertSlot', () => {
+  it('adds a slot', () => {
+    expect(upsertSlot([], slot(1, 1))).toEqual([slot(1, 1)]);
+  });
+
+  it('replaces the slot already on that day', () => {
+    const slots = upsertSlot([slot(1, 1)], slot(1, 1, 'template-2'));
+    expect(slots).toHaveLength(1);
+    expect(slots[0]?.templateId).toBe('template-2');
+  });
+
+  it('keeps the slots sorted by week and day', () => {
+    const slots = [slot(2, 3), slot(1, 5), slot(1, 2)].reduce(upsertSlot, [] as BlockSlot[]);
+    expect(slots.map((s) => [s.week, s.day])).toEqual([
+      [1, 2],
+      [1, 5],
+      [2, 3],
+    ]);
+  });
+
+  it('does not touch the same day in another week', () => {
+    const slots = upsertSlot([slot(1, 1)], slot(2, 1));
+    expect(slots).toHaveLength(2);
+  });
+});
