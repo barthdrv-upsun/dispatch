@@ -81,3 +81,35 @@ describe('upsertSlot', () => {
     expect(slots).toHaveLength(2);
   });
 });
+
+describe('removeSlot', () => {
+  it('takes a day out', () => {
+    expect(removeSlot([slot(1, 1), slot(1, 2)], 1, 1)).toEqual([slot(1, 2)]);
+  });
+
+  it('leaves the rest alone when there is nothing on that day', () => {
+    expect(removeSlot([slot(1, 2)], 1, 1)).toEqual([slot(1, 2)]);
+  });
+});
+
+describe('slotsForWeek', () => {
+  it('returns one week in day order', () => {
+    const slots = [slot(1, 5), slot(1, 1), slot(2, 2)];
+    expect(slotsForWeek(slots, 1).map((s) => s.day)).toEqual([1, 5]);
+  });
+});
+
+describe('emptyWeeks', () => {
+  it('lists the weeks with nothing in them', () => {
+    expect(emptyWeeks(block, [slot(1, 1), slot(3, 2)])).toEqual([2, 4]);
+  });
+
+  it('is empty when every week has something', () => {
+    const slots = [slot(1, 1), slot(2, 1), slot(3, 1), slot(4, 1)];
+    expect(emptyWeeks(block, slots)).toEqual([]);
+  });
+
+  it('lists every week of an empty block', () => {
+    expect(emptyWeeks(block, [])).toEqual([1, 2, 3, 4]);
+  });
+});
