@@ -80,3 +80,50 @@ describe('drafting', () => {
     expect(response.statusCode).toBe(400);
   });
 });
+
+describe('putting sessions on a block', () => {
+  it('replaces whatever was on that day', async () => {
+    const blockId = await draft();
+    addTemplate(world, { id: 'template-tempo', squadId: SQUAD_A, code: 'TEMPO-4X8', kind: 'tempo' });
+    await inject(app, 'PUT', `/blocks/${blockId}/slots`, {
+      as: ASSISTANT_A,
+      body: { week: 1, day: 1, templateId: TEMPLATE },
+    });
+    const second = await inject(app, 'PUT', `/blocks/${blockId}/slots`, {
+      as: ASSISTANT_A,
+      body: { week: 1, day: 1, templateId: 'template-tempo' },
+    });
+    expect(second.statusCode).toBe(200);
+    expect((second.json() as { slots: unknown[] }).slots).toHaveLength(1);
+  });
+
+  it('refuses a week past the end of the block', async () => {
+    const blockId = await draft();
+    const response = await inject(app, 'PUT', `/blocks/${blockId}/slots`, {
+      as: HEAD_COACH_A,
+      body: { week: 9, day: 1, templateId: TEMPLATE },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('refuses another squad\'s template', async () => {
+    const blockId = await draft();
+    addTemplate(world, { id: 'template-b', squadId: 'squad-b', code: 'EASY-45', kind: 'easy' });
+    const response = await inject(app, 'PUT', `/blocks/${blockId}/slots`, {
+      as: HEAD_COACH_A,
+      body: { week: 1, day: 1, templateId: 'template-b' },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('refuses to edit a block that has been published', async () => {
+    const blockId = await draft();
+    await fill(blockId);
+    await inject(app, 'POST', `/blocks/${blockId}/publish`, { as: HEAD_COACH_A });
+    const response = await inject(app, 'PUT', `/blocks/${blockId}/slots`, {
+      as: HEAD_COACH_A,
+      body: { week: 1, day: 2, templateId: TEMPLATE },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+});
