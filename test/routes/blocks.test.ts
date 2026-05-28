@@ -179,3 +179,41 @@ describe('POST /blocks/:blockId/publish', () => {
     expect(again.statusCode).toBe(409);
   });
 });
+
+/** R5: an edit is a new version, and the old one keeps standing. */
+describe('POST /blocks/:blockId/revisions', () => {
+  it('leaves the published version exactly where it was', async () => {
+    const blockId = await draft();
+    await fill(blockId);
+    await inject(app, 'POST', `/blocks/${blockId}/publish`, { as: HEAD_COACH_A });
+
+    const response = await inject(app, 'POST', `/blocks/${blockId}/revisions`, {
+      as: HEAD_COACH_A,
+      body: { name: 'Autumn base plus' },
+    });
+    expect(response.statusCode).toBe(201);
+    const body = response.json() as {
+      block: { id: string; version: number; state: string };
+      carriedSlots: number;
+      previousVersion: number;
+    };
+    expect(body.block.version).toBe(2);
+    expect(body.block.state).toBe('draft');
+    expect(body.previousVersion).toBe(1);
+    expect(body.carriedSlots).toBe(2);
+
+    const original = world.blocks.find((block) => block.id === blockId);
+    expect(original?.version).toBe(1);
+    expect(original?.state).toBe('published');
+  });
+
+  it('refuses an assistant coach', async () => {
+    const blockId = await draft();
+    await fill(blockId);
+    const response = await inject(app, 'POST', `/blocks/${blockId}/revisions`, {
+      as: ASSISTANT_A,
+      body: { weeks: 3 },
+    });
+    expect(response.statusCode).toBe(403);
+  });
+});
