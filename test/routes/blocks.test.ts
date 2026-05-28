@@ -127,3 +127,55 @@ describe('putting sessions on a block', () => {
     expect(response.statusCode).toBe(400);
   });
 });
+
+/** R5: publishing is the head coach's gate. */
+describe('POST /blocks/:blockId/publish', () => {
+  it('refuses an assistant coach and names the role', async () => {
+    const blockId = await draft(ASSISTANT_A);
+    await fill(blockId);
+    const response = await inject(app, 'POST', `/blocks/${blockId}/publish`, { as: ASSISTANT_A });
+
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toEqual({
+      error: 'forbidden',
+      message: 'publish a training block requires the head_coach role',
+      requiredRole: 'head_coach',
+    });
+    expect(world.blocks[0]?.state).toBe('draft');
+  });
+
+  it('refuses a physio', async () => {
+    const blockId = await draft();
+    await fill(blockId);
+    const response = await inject(app, 'POST', `/blocks/${blockId}/publish`, { as: PHYSIO });
+    expect(response.statusCode).toBe(403);
+  });
+
+  it('lets the head coach publish and records who and when', async () => {
+    const blockId = await draft();
+    await fill(blockId);
+    const response = await inject(app, 'POST', `/blocks/${blockId}/publish`, { as: HEAD_COACH_A });
+
+    expect(response.statusCode).toBe(200);
+    const block = (response.json() as { block: { state: string; publishedBy: string; publishedAt: string } }).block;
+    expect(block.state).toBe('published');
+    expect(block.publishedBy).toBe(HEAD_COACH_A);
+    expect(block.publishedAt).toBe('2026-06-15T08:00:00.000Z');
+  });
+
+  it('refuses a block with an empty week', async () => {
+    const blockId = await draft(HEAD_COACH_A, 3);
+    await fill(blockId, 2);
+    const response = await inject(app, 'POST', `/blocks/${blockId}/publish`, { as: HEAD_COACH_A });
+    expect(response.statusCode).toBe(400);
+    expect((response.json() as { details: { emptyWeeks: number[] } }).details.emptyWeeks).toEqual([3]);
+  });
+
+  it('refuses to publish twice', async () => {
+    const blockId = await draft();
+    await fill(blockId);
+    await inject(app, 'POST', `/blocks/${blockId}/publish`, { as: HEAD_COACH_A });
+    const again = await inject(app, 'POST', `/blocks/${blockId}/publish`, { as: HEAD_COACH_A });
+    expect(again.statusCode).toBe(409);
+  });
+});
