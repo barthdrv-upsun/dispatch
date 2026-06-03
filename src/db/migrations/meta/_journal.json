@@ -50,6 +50,20 @@
       "when": 1778579700000,
       "tag": "0006_blocks",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1780587060000,
+      "tag": "0007_plans",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781608140000,
+      "tag": "0008_injuries",
+      "breakpoints": true
     }
   ]
 }
