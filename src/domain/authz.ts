@@ -91,3 +91,11 @@ export function requireSquadAccess(actor: Actor, squadId: string, action: string
   }
   throw new ForbiddenError(action, 'assistant_coach');
 }
+
+/**
+ * A physio's grants span the squads they cover, so this reads across all of
+ * them rather than asking about one.
+ */
+export function physioSquads(actor: Actor): string[] {
+  return squadsWithRole(actor, 'physio');
+}
