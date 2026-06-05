@@ -4,3 +4,4 @@ export * from './schema/sessions.js';
 export * from './schema/goals.js';
 export * from './schema/strava.js';
 export * from './schema/plans.js';
+export * from './schema/injuries.js';
