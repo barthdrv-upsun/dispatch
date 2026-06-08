@@ -97,3 +97,20 @@ export const blockSlots = pgTable(
     pk: primaryKey({ columns: [t.blockId, t.week, t.day] }),
   }),
 );
+
+/**
+ * block_version is copied in at assignment time and never follows the block
+ * afterwards.
+ */
+export const plans = pgTable('plans', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  athleteId: uuid('athlete_id')
+    .notNull()
+    .references(() => athletes.id, { onDelete: 'cascade' }),
+  goalId: uuid('goal_id').references(() => goals.id, { onDelete: 'set null' }),
+  blockId: uuid('block_id')
+    .notNull()
+    .references(() => trainingBlocks.id),
+  blockVersion: integer('block_version').notNull(),
+  startsOn: date('starts_on').notNull(),
+});
