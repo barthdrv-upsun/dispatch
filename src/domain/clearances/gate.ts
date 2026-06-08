@@ -38,3 +38,53 @@ export function activeClearanceFor(
     .sort((a, b) => b.signedAt.getTime() - a.signedAt.getTime());
   return live[0] ?? null;
 }
+
+/**
+ * R4. An injured athlete may not be prescribed or credited a running session
+ * until a physio has signed off the open injury and not withdrawn it.
+ *
+ * `returning` is the state an athlete sits in after the signature: they are
+ * running again, so the gate is open, but the injury is still on their record
+ * until a physio resolves it.
+ */
+export function assessReturnToRun(input: GateInput): ReturnToRunDecision {
+  if (input.state === 'active') {
+    return { allowed: true, reason: 'athlete is active', blockingInjuryIds: [] };
+  }
+
+  const open = openInjuries(input.injuries, input.asOf);
+
+  if (input.state === 'returning') {
+    const unsigned = open.filter(
+      (injury) => activeClearanceFor(injury, input.clearances, input.isPhysio) === null,
+    );
+    if (unsigned.length > 0) {
+      return {
+        allowed: false,
+        reason: 'return-to-run clearance was withdrawn or never signed',
+        blockingInjuryIds: unsigned.map((injury) => injury.id),
+      };
+    }
+    return { allowed: true, reason: 'clearance signed and standing', blockingInjuryIds: [] };
+  }
+
+  if (open.length === 0) {
+    return {
+      allowed: false,
+      reason: 'athlete is marked injured but has no open injury on record',
+      blockingInjuryIds: [],
+    };
+  }
+
+  const blocking = open.filter(
+    (injury) => activeClearanceFor(injury, input.clearances, input.isPhysio) === null,
+  );
+  if (blocking.length > 0) {
+    return {
+      allowed: false,
+      reason: 'no standing return-to-run clearance signed by a physio',
+      blockingInjuryIds: blocking.map((injury) => injury.id),
+    };
+  }
+  return { allowed: true, reason: 'clearance signed and standing', blockingInjuryIds: [] };
+}
