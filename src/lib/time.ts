@@ -122,3 +122,11 @@ export function startOfIsoWeek(day: LocalDate): LocalDate {
 export function endOfIsoWeek(day: LocalDate): LocalDate {
   return addLocalDays(startOfIsoWeek(day), 6);
 }
+
+/**
+ * Human-readable wall-clock time in the athlete's zone, for anything a coach
+ * reads rather than anything the domain computes on.
+ */
+export function describeLocalTime(instant: Date, timeZone: string): string {
+  return formatInTimeZone(instant, timeZone, "yyyy-MM-dd HH:mm 'local'");
+}
