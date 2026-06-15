@@ -61,3 +61,22 @@ export type BlockWithSlots = {
   block: TrainingBlock;
   slots: BlockSlot[];
 };
+
+export type Plan = {
+  id: string;
+  athleteId: string;
+  goalId: string | null;
+  blockId: string;
+  blockVersion: number;
+  startsOn: string;
+};
+
+export type ScheduledSession = {
+  planId: string;
+  athleteId: string;
+  templateId: string;
+  templateVersion: number;
+  scheduledFor: string;
+  kind: TemplateKind;
+  prescribedLoad: number;
+};

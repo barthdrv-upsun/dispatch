@@ -44,3 +44,7 @@ export function expandPlan(
       };
     });
 }
+
+export function dayFor(startsOn: LocalDate, week: number, day: number): LocalDate {
+  return addLocalDays(startsOn, (week - 1) * DAYS_PER_WEEK + (day - 1));
+}
