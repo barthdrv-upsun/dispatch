@@ -47,3 +47,33 @@ export interface BlockRepo {
   putSlot(slot: BlockSlotRow): Promise<void>;
   putSlots(slots: readonly BlockSlotRow[]): Promise<void>;
 }
+
+export type PlanRow = {
+  id: string;
+  athleteId: string;
+  goalId: string | null;
+  blockId: string;
+  blockVersion: number;
+  startsOn: LocalDate;
+};
+
+export type GoalRow = {
+  id: string;
+  athleteId: string;
+  raceName: string;
+  raceDate: LocalDate;
+  distanceM: number;
+  targetTimeS: number | null;
+  state: string;
+};
+
+export interface PlanRepo {
+  insert(plan: Omit<PlanRow, 'id'>): Promise<string>;
+  byId(planId: string): Promise<PlanRow | null>;
+  forAthlete(athleteId: string): Promise<PlanRow[]>;
+}
+
+export interface GoalRepo {
+  byId(goalId: string): Promise<GoalRow | null>;
+  forAthlete(athleteId: string): Promise<GoalRow[]>;
+}
