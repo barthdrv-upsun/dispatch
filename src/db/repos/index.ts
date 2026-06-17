@@ -3,6 +3,8 @@ import { drizzleUserRepo, drizzleSquadRepo, drizzleAthleteRepo } from './athlete
 import { drizzleSessionRepo } from './sessions.js';
 import { drizzleTemplateRepo } from './templates.js';
 import { drizzleBlockRepo } from './blocks.js';
+import { drizzlePlanRepo, drizzleGoalRepo } from './plans.js';
+import { drizzleInjuryRepo } from './clearances.js';
 import type { Repositories } from '../../ports/index.js';
 
 export * from './athletes.js';
@@ -19,5 +21,8 @@ export function createRepositories(db: Database): Repositories {
     sessions: drizzleSessionRepo(db),
     templates: drizzleTemplateRepo(db),
     blocks: drizzleBlockRepo(db),
+    plans: drizzlePlanRepo(db),
+    goals: drizzleGoalRepo(db),
+    injuries: drizzleInjuryRepo(db),
   };
 }
