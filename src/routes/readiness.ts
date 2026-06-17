@@ -1,65 +1,64 @@
 import type { FastifyInstance } from 'fastify';
-import { ForbiddenError, NotFoundError } from '../lib/errors.js';
+import { NotFoundError } from '../lib/errors.js';
 import { addLocalDays, athleteLocalDay } from '../lib/time.js';
-import { hasRoleInSquad, isSelf } from '../domain/authz.js';
+import { assertCanReadAthlete } from '../domain/athletes/roster.js';
 import { toRunningLoadEntries, toRunningVolumeEntries } from '../domain/load/entries.js';
 import { assessReadiness, brokenRules } from '../domain/load/readiness.js';
+import { recentWeeks } from '../domain/load/summary.js';
 import { CHRONIC_DAYS } from '../domain/load/windows.js';
-import type { AthleteRow } from '../athletes/athlete_service.js';
-import type { SessionRow } from '../sessions/session_service.js';
-import { actorFor, fromCallback, requiredParam, type RouteDeps } from './context.js';
+import { actorFor, requiredParam, type RouteDeps } from './context.js';
 
+/** A little more than the chronic window, so the ramp comparison has a week
+ * behind it to look at. */
 const LOOKBACK_DAYS = CHRONIC_DAYS + 14;
 
-// @P:m09.A
-
+/**
+ * What the load rules say about an athlete today.
+ *
+ * Every bucket in here is cut on the athlete's own calendar, so the same
+ * sessions read differently for an athlete who has moved zone.
+ */
 export function readinessRoutes(app: FastifyInstance, deps: RouteDeps): void {
-  app.get('/athletes/:athleteId/readiness', async function (request, reply) {
-    const actor = await actorFor(request, deps);
+  const { repos, clock } = deps;
+
+  app.get('/athletes/:athleteId/readiness', async (request, reply) => {
+    const actor = await actorFor(request, repos);
     const athleteId = requiredParam(request.params, 'athleteId');
-    const athlete = await fromCallback<AthleteRow>(function (cb) {
-      deps.athletes.get(athleteId, cb);
-    });
+    const athlete = await repos.athletes.byId(athleteId);
     if (!athlete) {
-      throw new NotFoundError('no athlete ' + athleteId);
+      throw new NotFoundError(`no athlete ${athleteId}`);
     }
-    const allowed =
-      isSelf(actor, athlete.id) ||
-      hasRoleInSquad(actor, athlete.squadId, 'head_coach') ||
-      hasRoleInSquad(actor, athlete.squadId, 'assistant_coach') ||
-      hasRoleInSquad(actor, athlete.squadId, 'physio');
-    if (!allowed) {
-      throw new ForbiddenError("read an athlete's readiness", 'head_coach');
-    }
+    assertCanReadAthlete(actor, athlete, "read an athlete's readiness");
 
     const query = request.query as { asOf?: string };
-    const asOf = query.asOf || athleteLocalDay(new Date(), athlete.timezone);
-    const from = new Date(addLocalDays(asOf, -LOOKBACK_DAYS) + 'T00:00:00Z');
-    const to = new Date(addLocalDays(asOf, 1) + 'T00:00:00Z');
+    const asOf = query.asOf ?? athleteLocalDay(clock.now(), athlete.timezone);
+    const from = addLocalDays(asOf, -LOOKBACK_DAYS);
 
-    const rows = await fromCallback<SessionRow[]>(function (cb) {
-      deps.sessions.forAthleteBetween(athleteId, from, to, cb);
-    });
-    const sessions = (rows || []).map(function (row) {
-      return {
-        completedAt: row.completedAt,
-        load: null,
-        distanceM: row.distanceM,
-        templateKind: null,
-      };
-    });
+    const [sessions, goals] = await Promise.all([
+      repos.sessions.forAthleteFrom(athlete.id, new Date(`${from}T00:00:00Z`)),
+      repos.goals.forAthlete(athlete.id),
+    ]);
+    const nextRace = goals
+      .filter((goal) => goal.state === 'active' || goal.state === 'planned')
+      .filter((goal) => goal.raceDate >= asOf)
+      .sort((a, b) => (a.raceDate < b.raceDate ? -1 : 1))[0];
 
+    const loadEntries = toRunningLoadEntries(sessions, athlete.timezone);
+    const volumeEntries = toRunningVolumeEntries(sessions, athlete.timezone);
     const readiness = assessReadiness({
-      asOf: asOf,
-      loadEntries: toRunningLoadEntries(sessions, athlete.timezone),
-      volumeEntries: toRunningVolumeEntries(sessions, athlete.timezone),
-      raceDate: null,
+      asOf,
+      loadEntries,
+      volumeEntries,
+      raceDate: nextRace?.raceDate ?? null,
     });
 
     return reply.code(200).send({
       athleteId: athlete.id,
-      asOf: asOf,
-      readiness: readiness,
+      timezone: athlete.timezone,
+      asOf,
+      goal: nextRace ? { id: nextRace.id, raceName: nextRace.raceName, raceDate: nextRace.raceDate } : null,
+      readiness,
+      weeks: recentWeeks(loadEntries, volumeEntries, asOf),
       broken: brokenRules(readiness),
     });
   });
