@@ -1,5 +1,6 @@
 import { integer, numeric, pgEnum, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { athletes } from './athletes.js';
+import { plans, workoutTemplates } from './plans.js';
 
 export const sessionSource = pgEnum('session_source', ['manual', 'strava']);
 
@@ -8,6 +9,8 @@ export const sessions = pgTable('sessions', {
   athleteId: uuid('athlete_id')
     .notNull()
     .references(() => athletes.id, { onDelete: 'cascade' }),
+  planId: uuid('plan_id').references(() => plans.id, { onDelete: 'set null' }),
+  templateId: uuid('template_id').references(() => workoutTemplates.id, { onDelete: 'set null' }),
   scheduledFor: timestamp('scheduled_for', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   distanceM: integer('distance_m'),
