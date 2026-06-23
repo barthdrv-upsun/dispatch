@@ -75,3 +75,106 @@ describe('activeClearanceFor', () => {
     expect(activeClearanceFor(injury(), [clearance()], isPhysio)?.id).toBe('clearance-1');
   });
 });
+
+describe('assessReturnToRun', () => {
+  it('lets an active athlete run', () => {
+    const decision = assessReturnToRun({ state: 'active', injuries: [], clearances: [], asOf: ASOF });
+    expect(decision.allowed).toBe(true);
+  });
+
+  it('lets an active athlete run even with an old injury on file', () => {
+    const decision = assessReturnToRun({
+      state: 'active',
+      injuries: [injury({ resolvedOn: '2026-05-10' })],
+      clearances: [],
+      asOf: ASOF,
+    });
+    expect(decision.allowed).toBe(true);
+  });
+
+  it('refuses an injured athlete with nothing signed', () => {
+    const decision = assessReturnToRun({
+      state: 'injured',
+      injuries: [injury()],
+      clearances: [],
+      asOf: ASOF,
+    });
+    expect(decision.allowed).toBe(false);
+    expect(decision.reason).toContain('signed by a physio');
+    expect(decision.blockingInjuryIds).toEqual(['injury-1']);
+  });
+
+  it('lets an injured athlete run once a physio has signed', () => {
+    const decision = assessReturnToRun({
+      state: 'injured',
+      injuries: [injury()],
+      clearances: [clearance()],
+      asOf: ASOF,
+    });
+    expect(decision.allowed).toBe(true);
+  });
+
+  it('shuts the gate again the moment the clearance is withdrawn', () => {
+    const decision = assessReturnToRun({
+      state: 'injured',
+      injuries: [injury()],
+      clearances: [clearance({ revokedAt: new Date('2026-05-19T09:00:00Z') })],
+      asOf: ASOF,
+    });
+    expect(decision.allowed).toBe(false);
+  });
+
+  it('needs a clearance for every open injury, not just one of them', () => {
+    const decision = assessReturnToRun({
+      state: 'injured',
+      injuries: [injury(), injury({ id: 'injury-2', region: 'right soleus' })],
+      clearances: [clearance()],
+      asOf: ASOF,
+    });
+    expect(decision.allowed).toBe(false);
+    expect(decision.blockingInjuryIds).toEqual(['injury-2']);
+  });
+
+  it('will not take a coach\'s signature for a physio\'s', () => {
+    const decision = assessReturnToRun({
+      state: 'injured',
+      injuries: [injury()],
+      clearances: [clearance({ signedBy: 'user-head' })],
+      asOf: ASOF,
+      isPhysio: (userId) => userId === PHYSIO,
+    });
+    expect(decision.allowed).toBe(false);
+  });
+
+  it('flags an athlete marked injured with no injury on record', () => {
+    const decision = assessReturnToRun({
+      state: 'injured',
+      injuries: [],
+      clearances: [],
+      asOf: ASOF,
+    });
+    expect(decision.allowed).toBe(false);
+    expect(decision.reason).toContain('no open injury on record');
+  });
+
+  it('lets a returning athlete run on a standing clearance', () => {
+    const decision = assessReturnToRun({
+      state: 'returning',
+      injuries: [injury()],
+      clearances: [clearance()],
+      asOf: ASOF,
+    });
+    expect(decision.allowed).toBe(true);
+  });
+
+  it('stops a returning athlete whose clearance was withdrawn', () => {
+    const decision = assessReturnToRun({
+      state: 'returning',
+      injuries: [injury()],
+      clearances: [clearance({ revokedAt: new Date('2026-05-19T09:00:00Z') })],
+      asOf: ASOF,
+    });
+    expect(decision.allowed).toBe(false);
+    expect(decision.reason).toContain('withdrawn');
+  });
+});
