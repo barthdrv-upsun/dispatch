@@ -107,3 +107,38 @@ describe('signClearance', () => {
     expect(clearance.loadSnapshot).toEqual(packet);
   });
 });
+
+describe('revokeClearance', () => {
+  it('lets a physio withdraw, and stamps the clock', () => {
+    const revoked = revokeClearance(
+      { clearance: standing(), athleteSquadId: SQUAD, actor: physio, reason: 'flared up again' },
+      clock,
+    );
+    expect(revoked.revokedAt).toEqual(new Date(SIGNED_AT));
+    expect(revoked.notes).toContain('withdrawn: flared up again');
+  });
+
+  it('refuses anybody who is not a physio here', () => {
+    expect(() =>
+      revokeClearance({ clearance: standing(), athleteSquadId: SQUAD, actor: headCoach }, clock),
+    ).toThrow(ForbiddenError);
+    expect(() =>
+      revokeClearance({ clearance: standing(), athleteSquadId: SQUAD, actor: assistant }, clock),
+    ).toThrow(ForbiddenError);
+  });
+
+  it('refuses to withdraw one twice', () => {
+    const already = { ...standing(), revokedAt: new Date('2026-05-12T10:00:00Z') };
+    expect(() =>
+      revokeClearance({ clearance: already, athleteSquadId: SQUAD, actor: physio }, clock),
+    ).toThrow(ConflictError);
+  });
+
+  it('leaves the notes alone when no reason is given', () => {
+    const revoked = revokeClearance(
+      { clearance: { ...standing(), notes: 'original' }, athleteSquadId: SQUAD, actor: physio },
+      clock,
+    );
+    expect(revoked.notes).toBe('original');
+  });
+});
