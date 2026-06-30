@@ -195,3 +195,35 @@ describe('POST /athletes/:athleteId/plans', () => {
     });
   });
 });
+
+describe('GET /plans/:planId/sessions', () => {
+  it('lays the pinned block out on the calendar', async () => {
+    const blockId = await publishedBlock();
+    const created = await inject(app, 'POST', `/athletes/${ATHLETE_A}/plans`, {
+      as: HEAD_COACH_A,
+      body: { blockId, goalId: GOAL, startsOn: STARTS_ON },
+    });
+    const planId = (created.json() as { plan: { id: string } }).plan.id;
+
+    const response = await inject(app, 'GET', `/plans/${planId}/sessions`, { as: ATHLETE_A_USER });
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as {
+      blockVersion: number;
+      sessions: Array<{ scheduledFor: string; kind: string; prescribedLoad: number }>;
+    };
+    expect(body.blockVersion).toBe(1);
+    expect(body.sessions.map((session) => session.scheduledFor)).toEqual(['2026-06-22', '2026-06-29']);
+    expect(body.sessions[0]?.kind).toBe('easy');
+  });
+
+  it('refuses another squad\'s coach', async () => {
+    const blockId = await publishedBlock();
+    const created = await inject(app, 'POST', `/athletes/${ATHLETE_A}/plans`, {
+      as: HEAD_COACH_A,
+      body: { blockId, startsOn: STARTS_ON },
+    });
+    const planId = (created.json() as { plan: { id: string } }).plan.id;
+    const response = await inject(app, 'GET', `/plans/${planId}/sessions`, { as: HEAD_COACH_B });
+    expect(response.statusCode).toBe(403);
+  });
+});
