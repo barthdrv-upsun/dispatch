@@ -183,3 +183,41 @@ describe('POST /clearances/:clearanceId/revoke', () => {
     expect(again.statusCode).toBe(409);
   });
 });
+
+describe('GET /athletes/:athleteId/clearance-packet', () => {
+  it('tells a coach why their athlete is not running', async () => {
+    const response = await inject(app, 'GET', `/athletes/${ATHLETE_A}/clearance-packet?asOf=${ASOF}`, {
+      as: HEAD_COACH_A,
+    });
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as {
+      decision: { allowed: boolean; reason: string; blockingInjuryIds: string[] };
+      canSign: boolean;
+    };
+    expect(body.decision.allowed).toBe(false);
+    expect(body.decision.blockingInjuryIds).toEqual([INJURY]);
+    expect(body.canSign).toBe(false);
+  });
+
+  it('tells the physio they are the one who can sign it', async () => {
+    const response = await inject(app, 'GET', `/athletes/${ATHLETE_A}/clearance-packet?asOf=${ASOF}`, {
+      as: PHYSIO,
+    });
+    expect((response.json() as { canSign: boolean }).canSign).toBe(true);
+  });
+
+  it('opens the gate once the signature is in', async () => {
+    await inject(app, 'POST', `/injuries/${INJURY}/clearances`, { as: PHYSIO, body: { asOf: ASOF } });
+    const response = await inject(app, 'GET', `/athletes/${ATHLETE_A}/clearance-packet?asOf=${ASOF}`, {
+      as: PHYSIO,
+    });
+    expect((response.json() as { decision: { allowed: boolean } }).decision.allowed).toBe(true);
+  });
+
+  it('refuses a coach from another squad', async () => {
+    const response = await inject(app, 'GET', `/athletes/${ATHLETE_A}/clearance-packet?asOf=${ASOF}`, {
+      as: 'user-head-b',
+    });
+    expect(response.statusCode).toBe(403);
+  });
+});
