@@ -64,6 +64,13 @@
       "when": 1781608140000,
       "tag": "0008_injuries",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783421040000,
+      "tag": "0009_wellness",
+      "breakpoints": true
     }
   ]
 }
