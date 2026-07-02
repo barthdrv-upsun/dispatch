@@ -5,6 +5,7 @@ import type { ReturnToRunDecision } from '../clearances/gate.js';
 import { isRunningKind } from '../load/entries.js';
 import { sessionLoad } from '../load/session_load.js';
 import type { WorkoutTemplate } from '../plans/types.js';
+import { assertShoeUsable, type Shoe } from '../shoes/retirement.js';
 
 const MAX_DISTANCE_M = 300_000;
 const MAX_DURATION_S = 86_400;
@@ -22,6 +23,7 @@ export type NewSession = {
   avgHr: number | null;
   perceivedEffort: number | null;
   load: number | null;
+  shoeId: string | null;
   source: 'manual' | 'strava';
   localDate: LocalDate;
 };
@@ -36,6 +38,7 @@ export type LogSessionInput = {
   durationS?: number | null;
   avgHr?: number | null;
   perceivedEffort?: number | null;
+  shoe?: Shoe | null;
   source?: 'manual' | 'strava';
   returnToRun: ReturnToRunDecision;
 };
@@ -79,6 +82,11 @@ export function buildSession(input: LogSessionInput): NewSession {
     );
   }
 
+  const shoe = input.shoe ?? null;
+  if (shoe !== null) {
+    assertShoeUsable(shoe, input.athlete.id);
+  }
+
   return {
     athleteId: input.athlete.id,
     planId: input.planId,
@@ -97,6 +105,7 @@ export function buildSession(input: LogSessionInput): NewSession {
       restingHr: input.athlete.restingHr,
       maxHr: input.athlete.maxHr,
     }),
+    shoeId: shoe === null ? null : shoe.id,
     source: input.source ?? 'manual',
     localDate: athleteLocalDay(input.completedAt, input.athlete.timezone),
   };

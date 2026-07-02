@@ -20,6 +20,7 @@ export function drizzleSessionRepo(db: Database): SessionRepo {
           avgHr: session.avgHr,
           perceivedEffort: session.perceivedEffort,
           load: session.load === null ? null : session.load.toFixed(2),
+          shoeId: session.shoeId,
           source: session.source,
         })
         .returning({ id: sessions.id });
