@@ -71,6 +71,13 @@
       "when": 1783421040000,
       "tag": "0009_wellness",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784640360000,
+      "tag": "0010_shoes",
+      "breakpoints": true
     }
   ]
 }

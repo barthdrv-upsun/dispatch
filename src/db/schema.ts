@@ -5,3 +5,5 @@ export * from './schema/goals.js';
 export * from './schema/strava.js';
 export * from './schema/plans.js';
 export * from './schema/injuries.js';
+export * from './schema/shoes.js';
+export * from './schema/wellness.js';

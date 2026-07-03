@@ -5,6 +5,7 @@ import { toNumber } from '../lib/numbers.js';
 import { requireSelfOrCoach } from '../domain/authz.js';
 import { assessReturnToRun } from '../domain/clearances/gate.js';
 import { buildSession } from '../domain/sessions/log.js';
+import { addMileage, toShoe } from '../domain/shoes/retirement.js';
 import type { WorkoutTemplate } from '../domain/plans/types.js';
 import type { Repositories, WorkoutTemplateRow } from '../ports/index.js';
 import { actorFor, requiredParam, type RouteDeps } from './context.js';
@@ -65,7 +66,7 @@ async function returnToRunFor(repos: Repositories, athleteId: string, asOf: stri
  * been cleared is the same thing as prescribing it.
  */
 export function sessionRoutes(app: FastifyInstance, deps: RouteDeps): void {
-  const { repos } = deps;
+  const { repos, clock } = deps;
 
   app.post('/athletes/:athleteId/sessions', async (request, reply) => {
     const actor = await actorFor(request, repos);
@@ -80,6 +81,7 @@ export function sessionRoutes(app: FastifyInstance, deps: RouteDeps): void {
       completedAt?: string;
       templateId?: string | null;
       planId?: string | null;
+      shoeId?: string | null;
       distanceM?: number | null;
       durationS?: number | null;
       avgHr?: number | null;
@@ -97,6 +99,11 @@ export function sessionRoutes(app: FastifyInstance, deps: RouteDeps): void {
     if (body.templateId && !templateRow) {
       throw new NotFoundError(`no template ${body.templateId}`);
     }
+    const shoeRow = body.shoeId ? await repos.shoes.byId(body.shoeId) : null;
+    if (body.shoeId && !shoeRow) {
+      throw new NotFoundError(`no shoe ${body.shoeId}`);
+    }
+
     const asOf = athleteLocalDay(completedAt, athlete.timezone);
     const returnToRun = await returnToRunFor(repos, athlete.id, asOf);
 
@@ -109,6 +116,7 @@ export function sessionRoutes(app: FastifyInstance, deps: RouteDeps): void {
       durationS: body.durationS ?? null,
       avgHr: body.avgHr ?? null,
       perceivedEffort: body.perceivedEffort ?? null,
+      shoe: shoeRow === null ? null : toShoe(shoeRow),
       returnToRun,
     });
 
@@ -123,11 +131,21 @@ export function sessionRoutes(app: FastifyInstance, deps: RouteDeps): void {
       avgHr: session.avgHr,
       perceivedEffort: session.perceivedEffort,
       load: session.load,
+      shoeId: session.shoeId,
       source: session.source,
     });
 
+    if (shoeRow !== null && session.distanceM !== null) {
+      const worn = addMileage(toShoe(shoeRow), session.distanceM, clock.now());
+      await repos.shoes.save({
+        ...shoeRow,
+        currentKm: worn.currentKm.toFixed(2),
+        retiredAt: worn.retiredAt,
+      });
+    }
+
     return reply.code(201).send({
-      session: { id, localDate: session.localDate, load: session.load },
+      session: { id, localDate: session.localDate, load: session.load, shoeId: session.shoeId },
     });
   });
 }

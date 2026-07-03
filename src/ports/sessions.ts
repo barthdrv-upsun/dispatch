@@ -11,6 +11,7 @@ export type NewSessionRow = {
   avgHr: number | null;
   perceivedEffort: number | null;
   load: number | null;
+  shoeId: string | null;
   source: 'manual' | 'strava';
 };
 

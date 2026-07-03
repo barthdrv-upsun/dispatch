@@ -1,6 +1,7 @@
 import { integer, numeric, pgEnum, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { athletes } from './athletes.js';
 import { plans, workoutTemplates } from './plans.js';
+import { shoes } from './shoes.js';
 
 export const sessionSource = pgEnum('session_source', ['manual', 'strava']);
 
@@ -18,5 +19,6 @@ export const sessions = pgTable('sessions', {
   avgHr: integer('avg_hr'),
   perceivedEffort: integer('perceived_effort'),
   load: numeric('load', { precision: 8, scale: 2 }),
+  shoeId: uuid('shoe_id').references(() => shoes.id, { onDelete: 'set null' }),
   source: sessionSource('source').notNull().default('manual'),
 });
