@@ -77,3 +77,7 @@ export function addMileage(shoe: Shoe, distanceM: number, at: Date): Shoe {
     retiredAt: shoe.retiredAt ?? (crossed ? at : null),
   };
 }
+
+export function usableShoes(shoes: readonly Shoe[]): Shoe[] {
+  return shoes.filter((shoe) => !isRetired(shoe));
+}
