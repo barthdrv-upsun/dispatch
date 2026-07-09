@@ -94,3 +94,14 @@ function assertLoggableDay(localDate: string, today: LocalDate): void {
     });
   }
 }
+
+export function meanSleepHours(logs: readonly SleepLog[]): number | null {
+  if (logs.length === 0) {
+    return null;
+  }
+  return round1(logs.reduce((total, log) => total + log.hours, 0) / logs.length);
+}
+
+export function sleepByDay(logs: readonly SleepLog[]): Map<LocalDate, SleepLog> {
+  return new Map(logs.map((log) => [log.localDate, log]));
+}
