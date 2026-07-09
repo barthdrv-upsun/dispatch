@@ -59,3 +59,38 @@ export type HydrationLogInput = {
   localDate: string;
   litres: number | string;
 };
+
+/** Reads the wall clock directly, same as buildSleepLog. */
+export function buildHydrationLog(input: HydrationLogInput): HydrationLog {
+  const today = athleteLocalDay(new Date(), input.timeZone);
+  assertLoggableDay(input.localDate, today);
+
+  const litres = toNumber(input.litres, Number.NaN);
+  if (!Number.isFinite(litres) || litres < 0 || litres > 15) {
+    throw new ValidationError('hydration must sit between 0 and 15 litres', { litres: input.litres });
+  }
+  return {
+    athleteId: input.athleteId,
+    localDate: input.localDate,
+    litres: round2(litres),
+  };
+}
+
+function assertLoggableDay(localDate: string, today: LocalDate): void {
+  if (!isLocalDate(localDate)) {
+    throw new ValidationError('local_date must be a YYYY-MM-DD day', { localDate });
+  }
+  const age = localDaysBetween(localDate, today);
+  if (age < 0) {
+    throw new ValidationError('that day has not happened yet in the athlete\'s timezone', {
+      localDate,
+      today,
+    });
+  }
+  if (age > BACKFILL_LIMIT_DAYS) {
+    throw new ValidationError(`logs can only be backfilled ${BACKFILL_LIMIT_DAYS} days`, {
+      localDate,
+      today,
+    });
+  }
+}
