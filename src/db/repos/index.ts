@@ -5,6 +5,8 @@ import { drizzleTemplateRepo } from './templates.js';
 import { drizzleBlockRepo } from './blocks.js';
 import { drizzlePlanRepo, drizzleGoalRepo } from './plans.js';
 import { drizzleInjuryRepo } from './clearances.js';
+import { drizzleWellnessRepo } from './wellness.js';
+import { drizzleShoeRepo } from './shoes.js';
 import type { Repositories } from '../../ports/index.js';
 
 export * from './athletes.js';
@@ -24,5 +26,7 @@ export function createRepositories(db: Database): Repositories {
     plans: drizzlePlanRepo(db),
     goals: drizzleGoalRepo(db),
     injuries: drizzleInjuryRepo(db),
+    wellness: drizzleWellnessRepo(db),
+    shoes: drizzleShoeRepo(db),
   };
 }
