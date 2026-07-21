@@ -38,3 +38,28 @@ describe('toShoe', () => {
     expect(converted.currentKm).toBe(620.4);
   });
 });
+
+describe('isRetired', () => {
+  it('is false for a pair with life left', () => {
+    expect(isRetired(shoe())).toBe(false);
+  });
+
+  it('is true once the threshold is reached', () => {
+    expect(isRetired(shoe({ currentKm: 800 }))).toBe(true);
+    expect(isRetired(shoe({ currentKm: 842.4 }))).toBe(true);
+  });
+
+  it('is true for a pair somebody has stamped, whatever the mileage says', () => {
+    expect(isRetired(shoe({ currentKm: 10, retiredAt: new Date('2026-05-01T00:00:00Z') }))).toBe(true);
+  });
+});
+
+describe('remainingKm', () => {
+  it('counts what is left', () => {
+    expect(remainingKm(shoe())).toBe(180);
+  });
+
+  it('never goes below zero', () => {
+    expect(remainingKm(shoe({ currentKm: 900 }))).toBe(0);
+  });
+});
