@@ -126,3 +126,10 @@ describe('addMileage', () => {
     expect(original.currentKm).toBe(620);
   });
 });
+
+describe('usableShoes', () => {
+  it('filters out the worn-out pairs', () => {
+    const shoes = [shoe(), shoe({ id: 'shoe-2', currentKm: 900 }), shoe({ id: 'shoe-3', currentKm: 100 })];
+    expect(usableShoes(shoes).map((s) => s.id)).toEqual(['shoe-1', 'shoe-3']);
+  });
+});
