@@ -76,3 +76,29 @@ describe('buildSleepLog', () => {
     );
   });
 });
+
+describe('buildHydrationLog', () => {
+  const base = { athleteId: 'athlete-a', timeZone: 'Europe/Berlin', localDate: '2026-05-19', litres: 2.4 };
+
+  it('accepts a sensible day', () => {
+    expect(withClock(() => buildHydrationLog(base))).toEqual({
+      athleteId: 'athlete-a',
+      localDate: '2026-05-19',
+      litres: 2.4,
+    });
+  });
+
+  it('refuses a bathtub', () => {
+    expect(() => withClock(() => buildHydrationLog({ ...base, litres: 16 }))).toThrow(ValidationError);
+  });
+
+  it('refuses a negative', () => {
+    expect(() => withClock(() => buildHydrationLog({ ...base, litres: -0.5 }))).toThrow(ValidationError);
+  });
+
+  it('refuses a future day', () => {
+    expect(() => withClock(() => buildHydrationLog({ ...base, localDate: '2026-05-21' }))).toThrow(
+      ValidationError,
+    );
+  });
+});
