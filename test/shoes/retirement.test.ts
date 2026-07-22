@@ -63,3 +63,66 @@ describe('remainingKm', () => {
     expect(remainingKm(shoe({ currentKm: 900 }))).toBe(0);
   });
 });
+
+describe('assertShoeUsable', () => {
+  it('accepts a pair with life left', () => {
+    expect(() => assertShoeUsable(shoe(), 'athlete-a')).not.toThrow();
+  });
+
+  it('refuses a pair at the threshold', () => {
+    try {
+      assertShoeUsable(shoe({ currentKm: 800 }), 'athlete-a');
+      expect.unreachable('a pair at its threshold must not take a new session');
+    } catch (err) {
+      expect(err).toBeInstanceOf(ConflictError);
+      expect((err as ConflictError).message).toContain('800km retirement threshold');
+    }
+  });
+
+  it('refuses a pair past the threshold', () => {
+    expect(() => assertShoeUsable(shoe({ currentKm: 842.4 }), 'athlete-a')).toThrow(ConflictError);
+  });
+
+  it('refuses a pair already stamped retired', () => {
+    expect(() =>
+      assertShoeUsable(shoe({ retiredAt: new Date('2026-05-01T00:00:00Z') }), 'athlete-a'),
+    ).toThrow(ConflictError);
+  });
+
+  it('refuses somebody else\'s shoes', () => {
+    expect(() => assertShoeUsable(shoe(), 'athlete-b')).toThrow(ValidationError);
+  });
+});
+
+describe('addMileage', () => {
+  const at = new Date('2026-05-20T07:00:00Z');
+
+  it('adds the run to the pair', () => {
+    expect(addMileage(shoe(), 12_400, at).currentKm).toBe(632.4);
+  });
+
+  it('retires the pair the moment it crosses the threshold', () => {
+    const worn = addMileage(shoe({ currentKm: 795 }), 6000, at);
+    expect(worn.currentKm).toBe(801);
+    expect(worn.retiredAt).toEqual(at);
+  });
+
+  it('retires the pair when it lands exactly on the threshold', () => {
+    expect(addMileage(shoe({ currentKm: 795 }), 5000, at).retiredAt).toEqual(at);
+  });
+
+  it('leaves an already-stamped date alone', () => {
+    const earlier = new Date('2026-04-01T00:00:00Z');
+    expect(addMileage(shoe({ currentKm: 810, retiredAt: earlier }), 5000, at).retiredAt).toEqual(earlier);
+  });
+
+  it('refuses to take mileage off', () => {
+    expect(() => addMileage(shoe(), -100, at)).toThrow(ValidationError);
+  });
+
+  it('does not mutate the pair it was given', () => {
+    const original = shoe();
+    addMileage(original, 10_000, at);
+    expect(original.currentKm).toBe(620);
+  });
+});
