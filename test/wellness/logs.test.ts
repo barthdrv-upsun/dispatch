@@ -102,3 +102,24 @@ describe('buildHydrationLog', () => {
     );
   });
 });
+
+describe('meanSleepHours', () => {
+  it('averages to one decimal place', () => {
+    const logs = [
+      { athleteId: 'athlete-a', localDate: '2026-05-18', hours: 7.5, quality: null },
+      { athleteId: 'athlete-a', localDate: '2026-05-19', hours: 6.2, quality: null },
+    ];
+    expect(meanSleepHours(logs)).toBe(6.9);
+  });
+
+  it('has nothing to average when there are no logs', () => {
+    expect(meanSleepHours([])).toBeNull();
+  });
+});
+
+describe('sleepByDay', () => {
+  it('keys the logs by day', () => {
+    const log = { athleteId: 'athlete-a', localDate: '2026-05-18', hours: 7.5, quality: 4 };
+    expect(sleepByDay([log]).get('2026-05-18')).toEqual(log);
+  });
+});
