@@ -276,3 +276,301 @@ const CROSS_CODES = ['STRENGTH-A', 'BIKE-60', 'SWIM-1500'];
 
 const HISTORY_DAYS = 460;
 const WELLNESS_DAYS = 120;
+
+/**
+ * Builds the whole synthetic world. `today` defaults to the real today so
+ * that the goal races stay in the future; set SEED_TODAY to pin it.
+ */
+export function buildSeedData(today: LocalDate = athleteLocalDay(new Date(), 'UTC')): SeedData {
+  resetSeedIds();
+  const rng = mulberry32(20260501);
+
+  const data: SeedData = {
+    today,
+    squads: [],
+    users: [],
+    userRoles: [],
+    athletes: [],
+    templates: [],
+    blocks: [],
+    blockSlots: [],
+    goals: [],
+    raceResults: [],
+    plans: [],
+    shoes: [],
+    sessions: [],
+    sleepLogs: [],
+    hydrationLogs: [],
+    injuries: [],
+    clearances: [],
+    stravaLinks: [],
+  };
+
+  for (const spec of SQUAD_NAMES) {
+    data.squads.push({ id: seedId(), name: spec.name, timezone: spec.timezone, active: true });
+  }
+
+  for (const member of STAFF) {
+    const squad = data.squads[member.squadIndex];
+    if (!squad) {
+      continue;
+    }
+    const id = seedId();
+    data.users.push({ id, name: member.name, email: `${slug(member.name)}@pacenote.invalid` });
+    data.userRoles.push({ userId: id, squadId: squad.id, role: member.role });
+  }
+
+  /** One physio, covering all three squads - which is what "across squads" means. */
+  const physioId = seedId();
+  data.users.push({ id: physioId, name: PHYSIO.name, email: PHYSIO.email });
+  for (const squad of data.squads) {
+    data.userRoles.push({ userId: physioId, squadId: squad.id, role: 'physio' });
+  }
+
+  for (const squad of data.squads) {
+    for (const spec of TEMPLATE_SPECS) {
+      data.templates.push({
+        id: seedId(),
+        squadId: squad.id,
+        code: spec.code,
+        version: 1,
+        kind: spec.kind,
+        prescription: spec.prescription,
+        loadFactor: spec.loadFactor.toFixed(2),
+        supersededAt: null,
+      });
+    }
+  }
+
+  const headCoachFor = (squadId: string): string => {
+    const grant = data.userRoles.find((role) => role.squadId === squadId && role.role === 'head_coach');
+    return grant ? grant.userId : physioId;
+  };
+
+  const publishedAt = instantAt(addLocalDays(today, -70), 9, 15);
+  for (const squad of data.squads) {
+    const blockId = seedId();
+    data.blocks.push({
+      id: blockId,
+      squadId: squad.id,
+      name: 'Autumn base',
+      version: 1,
+      weeks: 12,
+      state: 'published',
+      publishedBy: headCoachFor(squad.id),
+      publishedAt,
+    });
+    const squadTemplates = data.templates.filter((template) => template.squadId === squad.id);
+    const byCode = new Map(squadTemplates.map((template) => [template.code, template]));
+    const week = [
+      'EASY-45',
+      'TEMPO-4X8',
+      'EASY-45',
+      'INT-12X400',
+      'EASY-70',
+      'LONG-25K',
+      'STRENGTH-A',
+    ];
+    for (let w = 1; w <= 12; w += 1) {
+      for (let d = 1; d <= 7; d += 1) {
+        const code = week[d - 1];
+        if (!code || (d === 4 && w % 4 === 0)) {
+          continue;
+        }
+        const template = byCode.get(code);
+        if (!template) {
+          continue;
+        }
+        data.blockSlots.push({
+          blockId,
+          week: w,
+          day: d,
+          templateId: template.id,
+          templateVersion: template.version,
+        });
+      }
+    }
+  }
+
+  const planStart = (() => {
+    let day = addLocalDays(today, -56);
+    while (localWeekday(day) !== 1) {
+      day = addLocalDays(day, 1);
+    }
+    return day;
+  })();
+
+  ATHLETE_NAMES.forEach((name, index) => {
+    const squad = data.squads[index % data.squads.length];
+    if (!squad) {
+      return;
+    }
+    const userId = seedId();
+    const athleteId = seedId();
+    data.users.push({ id: userId, name, email: `${slug(name)}@runners.invalid` });
+    data.userRoles.push({ userId, squadId: squad.id, role: 'athlete' });
+
+    const state = index === 0 ? 'injured' : index === 1 ? 'returning' : 'active';
+    const restingHr = intBetween(rng, 38, 58);
+    const athlete = {
+      id: athleteId,
+      squadId: squad.id,
+      userId,
+      dateOfBirth: `${String(intBetween(rng, 1986, 2004))}-${String(intBetween(rng, 1, 12)).padStart(2, '0')}-${String(intBetween(rng, 1, 28)).padStart(2, '0')}`,
+      timezone: squad.timezone,
+      restingHr,
+      maxHr: restingHr + intBetween(rng, 130, 160),
+      state: state as 'active' | 'injured' | 'returning',
+    };
+    data.athletes.push(athlete);
+
+    const raceDate = addLocalDays(today, intBetween(rng, 70, 112));
+    const goalId = seedId();
+    const distanceM = pick(rng, [10000, 21097, 42195]);
+    data.goals.push({
+      id: goalId,
+      athleteId,
+      raceName: pick(rng, ['Harbour Half', 'Vineyard Marathon', 'Old Mill 10k', 'Lakeside Half']),
+      raceDate,
+      distanceM,
+      targetTimeS: Math.round((distanceM / 1000) * intBetween(rng, 195, 300)),
+      state: 'active',
+    });
+
+    for (let past = 0; past < intBetween(rng, 2, 3); past += 1) {
+      const pastDistance = pick(rng, [5000, 10000, 21097]);
+      data.raceResults.push({
+        id: seedId(),
+        athleteId,
+        raceName: pick(rng, ['Winter Series 5k', 'Spring Half', 'Riverside 10k', 'Coastal Half']),
+        raceDate: addLocalDays(today, -intBetween(rng, 60, 400)),
+        distanceM: pastDistance,
+        finishTimeS: Math.round((pastDistance / 1000) * intBetween(rng, 200, 320)),
+      });
+    }
+
+    const block = data.blocks.find((candidate) => candidate.squadId === squad.id);
+    if (block) {
+      data.plans.push({
+        id: seedId(),
+        athleteId,
+        goalId,
+        blockId: block.id,
+        blockVersion: block.version,
+        startsOn: planStart,
+      });
+    }
+
+    // One pair well past its threshold and not yet stamped, so R7 has
+    // something to refuse.
+    const wornOut = index === 2;
+    const dailyShoe = {
+      id: seedId(),
+      athleteId,
+      model: pick(rng, SHOE_MODELS),
+      purchasedOn: addLocalDays(today, -intBetween(rng, 200, 400)),
+      retireAtKm: '800.00',
+      currentKm: wornOut ? '842.40' : floatBetween(rng, 120, 620).toFixed(2),
+      retiredAt: null,
+    };
+    const raceShoe = {
+      id: seedId(),
+      athleteId,
+      model: 'Alto Racer 3',
+      purchasedOn: addLocalDays(today, -intBetween(rng, 30, 180)),
+      retireAtKm: '400.00',
+      currentKm: floatBetween(rng, 20, 260).toFixed(2),
+      retiredAt: null,
+    };
+    data.shoes.push(dailyShoe, raceShoe);
+
+    seedTraining(data, rng, athlete, dailyShoe.id, today);
+  });
+
+  seedInjuries(data, rng, physioId, today);
+  seedStravaLinks(data, today);
+
+  return data;
+}
+
+function seedTraining(
+  data: SeedData,
+  rng: Rng,
+  athlete: SeedData['athletes'][number],
+  shoeId: string,
+  today: LocalDate,
+): void {
+  const squadTemplates = data.templates.filter((template) => template.squadId === athlete.squadId);
+  const byCode = new Map(squadTemplates.map((template) => [template.code, template]));
+  const plan = data.plans.find((candidate) => candidate.athleteId === athlete.id);
+  /** The injured athlete stops running when the injury lands. */
+  const stopRunningFrom = athlete.state === 'injured' ? addLocalDays(today, -12) : null;
+
+  for (let back = HISTORY_DAYS; back >= 0; back -= 1) {
+    const day = addLocalDays(today, -back);
+    const weekday = localWeekday(day);
+    if (weekday === 3 && chance(rng, 0.75)) {
+      continue;
+    }
+    if (chance(rng, 0.08)) {
+      continue;
+    }
+
+    const injured = stopRunningFrom !== null && day >= stopRunningFrom;
+    const code = injured
+      ? pick(rng, CROSS_CODES)
+      : chance(rng, 0.18)
+        ? pick(rng, CROSS_CODES)
+        : weekday === 6
+          ? 'LONG-25K'
+          : pick(rng, RUNNING_CODES);
+    const template = byCode.get(code);
+    if (!template) {
+      continue;
+    }
+
+    const running = ['easy', 'tempo', 'interval', 'long'].includes(template.kind);
+    const durationS = running
+      ? intBetween(rng, code === 'LONG-25K' ? 5400 : 2100, code === 'LONG-25K' ? 9000 : 4500)
+      : intBetween(rng, 1800, 3600);
+    const distanceM = running ? Math.round((durationS / 60) * floatBetween(rng, 175, 235)) : null;
+    const perceivedEffort =
+      template.kind === 'interval' ? intBetween(rng, 7, 9) : template.kind === 'tempo' ? intBetween(rng, 6, 8) : intBetween(rng, 2, 5);
+    const avgHr = Math.round(athlete.restingHr + (athlete.maxHr - athlete.restingHr) * floatBetween(rng, 0.55, 0.88));
+    const hour = intBetween(rng, 5, 20);
+    const completedAt = instantAt(day, hour, intBetween(rng, 0, 59));
+    const load = sessionLoad({ durationS, distanceM, avgHr, perceivedEffort });
+
+    data.sessions.push({
+      id: seedId(),
+      athleteId: athlete.id,
+      planId: plan && day >= plan.startsOn ? plan.id : null,
+      templateId: template.id,
+      scheduledFor: plan && day >= plan.startsOn ? instantAt(day, 7, 0) : null,
+      completedAt,
+      distanceM,
+      durationS,
+      avgHr,
+      perceivedEffort,
+      load: load === null ? null : load.toFixed(2),
+      shoeId: running ? shoeId : null,
+      source: chance(rng, 0.35) ? 'strava' : 'manual',
+    });
+
+    if (back < WELLNESS_DAYS) {
+      data.sleepLogs.push({
+        athleteId: athlete.id,
+        localDate: day,
+        hours: floatBetween(rng, 5.4, 9.1).toFixed(2),
+        quality: intBetween(rng, 2, 5),
+      });
+      if (chance(rng, 0.8)) {
+        data.hydrationLogs.push({
+          athleteId: athlete.id,
+          localDate: day,
+          litres: floatBetween(rng, 1.2, 4.1).toFixed(2),
+        });
+      }
+    }
+  }
+}
