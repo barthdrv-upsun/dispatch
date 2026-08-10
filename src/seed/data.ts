@@ -574,3 +574,83 @@ function seedTraining(
     }
   }
 }
+
+/**
+ * One athlete injured with nothing signed, one back running on a standing
+ * clearance, and one old injury that was resolved months ago.
+ */
+function seedInjuries(data: SeedData, rng: Rng, physioId: string, today: LocalDate): void {
+  const injured = data.athletes[0];
+  const returning = data.athletes[1];
+  const other = data.athletes[4];
+
+  if (injured) {
+    data.injuries.push({
+      id: seedId(),
+      athleteId: injured.id,
+      region: pick(rng, INJURY_REGIONS),
+      onsetOn: addLocalDays(today, -12),
+      severity: 6,
+      notes: INJURY_NOTES[0] ?? 'Synthetic seed data.',
+      resolvedOn: null,
+    });
+  }
+
+  if (returning) {
+    const injuryId = seedId();
+    data.injuries.push({
+      id: injuryId,
+      athleteId: returning.id,
+      region: pick(rng, INJURY_REGIONS),
+      onsetOn: addLocalDays(today, -48),
+      severity: 4,
+      notes: INJURY_NOTES[1] ?? 'Synthetic seed data.',
+      resolvedOn: null,
+    });
+    data.clearances.push({
+      id: seedId(),
+      injuryId,
+      signedBy: physioId,
+      signedAt: instantAt(addLocalDays(today, -9), 11, 30),
+      revokedAt: null,
+      notes: 'Pain-free walking and hopping, cleared for 20 minutes easy every other day.',
+    });
+  }
+
+  if (other) {
+    data.injuries.push({
+      id: seedId(),
+      athleteId: other.id,
+      region: pick(rng, INJURY_REGIONS),
+      onsetOn: addLocalDays(today, -300),
+      severity: 3,
+      notes: INJURY_NOTES[2] ?? 'Synthetic seed data.',
+      resolvedOn: addLocalDays(today, -270),
+    });
+  }
+}
+
+/**
+ * Links the first two athletes to the two athlete ids the local Strava double
+ * answers for, so `npm run seed` leaves a working sync path behind.
+ */
+function seedStravaLinks(data: SeedData, today: LocalDate): void {
+  const pairs = [
+    { index: 0, stravaAthleteId: 7311001 },
+    { index: 1, stravaAthleteId: 7311002 },
+  ];
+  for (const pair of pairs) {
+    const athlete = data.athletes[pair.index];
+    if (!athlete) {
+      continue;
+    }
+    data.stravaLinks.push({
+      athleteId: athlete.id,
+      stravaAthleteId: pair.stravaAthleteId,
+      accessToken: `local-access-${String(pair.stravaAthleteId)}`,
+      refreshToken: `local-refresh-${String(pair.stravaAthleteId)}`,
+      expiresAt: instantAt(addLocalDays(today, 1), 12, 0),
+      scope: 'read,activity:read_all',
+    });
+  }
+}
