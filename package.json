@@ -12,20 +12,22 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "migrate": "tsx src/db/migrate.ts",
+    "seed": "tsx src/seed/run.ts",
     "fake:strava": "tsx src/fakes/strava/server.ts"
   },
   "dependencies": {
     "date-fns": "2.30.0",
     "date-fns-tz": "2.0.1",
-    "drizzle-orm": "^0.39.3",
-    "fastify": "^5.2.1",
-    "postgres": "^3.4.5"
+    "drizzle-orm": "^0.45.2",
+    "fastify": "^5.12.1",
+    "postgres": "^3.4.9"
   },
   "devDependencies": {
-    "@types/node": "^22.13.4",
-    "drizzle-kit": "^0.30.4",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.3",
-    "vitest": "^3.0.5"
+    "@types/node": "^24.13.3",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
   }
 }
