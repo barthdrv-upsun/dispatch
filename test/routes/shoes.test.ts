@@ -46,3 +46,49 @@ describe('GET /athletes/:athleteId/shoes', () => {
     expect(response.statusCode).toBe(403);
   });
 });
+
+describe('POST /athletes/:athleteId/shoes', () => {
+  it('adds a pair', async () => {
+    const response = await inject(app, 'POST', `/athletes/${ATHLETE_A}/shoes`, {
+      as: ATHLETE_A_USER,
+      body: { model: 'Meridian Glide 4', purchasedOn: '2026-06-01', retireAtKm: 750 },
+    });
+    expect(response.statusCode).toBe(201);
+    expect(world.shoes).toHaveLength(2);
+  });
+
+  it('lets a coach add one for the athlete', async () => {
+    const response = await inject(app, 'POST', `/athletes/${ATHLETE_A}/shoes`, {
+      as: HEAD_COACH_A,
+      body: { model: 'Meridian Glide 4', purchasedOn: '2026-06-01' },
+    });
+    expect(response.statusCode).toBe(201);
+  });
+
+  it('refuses a pair with no model or no purchase date', async () => {
+    expect(
+      (
+        await inject(app, 'POST', `/athletes/${ATHLETE_A}/shoes`, {
+          as: ATHLETE_A_USER,
+          body: { model: '', purchasedOn: '2026-06-01' },
+        })
+      ).statusCode,
+    ).toBe(400);
+    expect(
+      (
+        await inject(app, 'POST', `/athletes/${ATHLETE_A}/shoes`, {
+          as: ATHLETE_A_USER,
+          body: { model: 'Meridian Glide 4', purchasedOn: 'June' },
+        })
+      ).statusCode,
+    ).toBe(400);
+  });
+
+  it('refuses a threshold nobody would set', async () => {
+    const response = await inject(app, 'POST', `/athletes/${ATHLETE_A}/shoes`, {
+      as: ATHLETE_A_USER,
+      body: { model: 'Meridian Glide 4', purchasedOn: '2026-06-01', retireAtKm: 9000 },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+});
