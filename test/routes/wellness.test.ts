@@ -68,3 +68,22 @@ describe('PUT /athletes/:athleteId/sleep', () => {
     expect(response.statusCode).toBe(400);
   });
 });
+
+describe('PUT /athletes/:athleteId/hydration', () => {
+  it('records a day', async () => {
+    const response = await inject(app, 'PUT', `/athletes/${ATHLETE_A}/hydration`, {
+      as: ATHLETE_A_USER,
+      body: { localDate: today(), litres: 2.4 },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(world.hydration[0]?.litres).toBe('2.40');
+  });
+
+  it('refuses a bathtub', async () => {
+    const response = await inject(app, 'PUT', `/athletes/${ATHLETE_A}/hydration`, {
+      as: ATHLETE_A_USER,
+      body: { localDate: today(), litres: 40 },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+});
