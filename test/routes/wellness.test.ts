@@ -87,3 +87,16 @@ describe('PUT /athletes/:athleteId/hydration', () => {
     expect(response.statusCode).toBe(400);
   });
 });
+
+describe('GET /athletes/:athleteId/sleep', () => {
+  it('reports the mean alongside the logs', async () => {
+    world.sleep.push(
+      { athleteId: ATHLETE_A, localDate: today(), hours: '7.00', quality: 4 },
+    );
+    const response = await inject(app, 'GET', `/athletes/${ATHLETE_A}/sleep`, { as: HEAD_COACH_A });
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as { logs: unknown[]; meanHours: number };
+    expect(body.logs).toHaveLength(1);
+    expect(body.meanHours).toBe(7);
+  });
+});
