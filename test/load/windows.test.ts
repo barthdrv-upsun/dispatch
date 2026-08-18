@@ -25,3 +25,17 @@ it('builds an inclusive rolling window', () => {
   expect(windowContains(window, '2025-11-03')).toBe(true);
   expect(windowContains(window, '2025-11-02')).toBe(false);
 });
+
+it('acute load uses a rolling 7-day window, not the calendar week', () => {
+  // 90km over the previous seven days, most of it before the Monday we are
+  // asking about. An athlete in this state is not fresh.
+  const heavy = [
+    { localDate: '2025-11-04', load: 120 },
+    { localDate: '2025-11-06', load: 150 },
+    { localDate: '2025-11-08', load: 200 },
+    { localDate: '2025-11-09', load: 130 },
+    { localDate: '2025-11-10', load: 40 },
+  ];
+
+  expect(computeAcuteLoad(heavy, '2025-11-10')).toBe(640);
+});
