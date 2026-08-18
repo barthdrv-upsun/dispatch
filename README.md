@@ -118,6 +118,17 @@ them, which moves a late-evening run into a different day and shifts every
 rolling window that touches it. `athleteLocalDay` in `src/lib/time.ts` is the
 only thing allowed to decide what day something happened on.
 
+## The local Strava double, in one line
+
+```sh
+npm run fake:strava &
+curl -s localhost:4010/_fake/webhook-deliveries | head
+```
+
+That delivery log is the one recorded during the July outage, duplicates
+included. Post it at `/webhooks/strava` twice and the session count must not
+move.
+
 ## Seed data
 
 `npm run seed` builds three squads, sixteen athletes and around fifteen
