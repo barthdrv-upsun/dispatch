@@ -4,6 +4,7 @@ export * from './plans.js';
 export * from './clearances.js';
 export * from './wellness.js';
 export * from './shoes.js';
+export * from './dashboard.js';
 
 import type { UserRepo, SquadRepo, AthleteRepo } from './athletes.js';
 import type { SessionRepo } from './sessions.js';
@@ -11,6 +12,7 @@ import type { TemplateRepo, BlockRepo, PlanRepo, GoalRepo } from './plans.js';
 import type { InjuryRepo } from './clearances.js';
 import type { WellnessRepo } from './wellness.js';
 import type { ShoeRepo } from './shoes.js';
+import type { DashboardRepo } from './dashboard.js';
 
 /**
  * The whole surface the handlers are allowed to touch. A route gets this and
@@ -29,4 +31,5 @@ export type Repositories = {
   injuries: InjuryRepo;
   wellness: WellnessRepo;
   shoes: ShoeRepo;
+  dashboard: DashboardRepo;
 };
