@@ -8,6 +8,7 @@ import { planRoutes } from './plans.js';
 import { clearanceRoutes } from './clearances.js';
 import { wellnessRoutes } from './wellness.js';
 import { shoeRoutes } from './shoes.js';
+import { dashboardRoutes } from './dashboard.js';
 import { stravaRoutes, type IngestBundle } from './strava.js';
 import { registerErrorHandler, type RouteDeps } from './context.js';
 
@@ -30,6 +31,7 @@ export function registerRoutes(app: FastifyInstance, deps: RouteDeps, options: R
   clearanceRoutes(app, deps);
   wellnessRoutes(app, deps);
   shoeRoutes(app, deps);
+  dashboardRoutes(app, deps);
   if (options.ingest) {
     stravaRoutes(app, deps, options.ingest);
   }
