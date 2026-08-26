@@ -276,6 +276,28 @@ export function memoryRepositories(world: MemoryWorld): Repositories {
       },
     },
 
+    dashboard: {
+      async athletesForDashboard(squadId) {
+        return world.athletes
+          .filter((athlete) => athlete.squadId === squadId)
+          .map((athlete) => ({
+            athlete,
+            link: null,
+            openInjury: null,
+          }));
+      },
+      async recentSessions(athleteId, since) {
+        return world.sessions
+          .filter((session) => session.athleteId === athleteId)
+          .filter((session) => session.completedAt.getTime() >= since.getTime())
+          .map((session) => ({
+            completedAt: session.completedAt,
+            load: session.load,
+            distanceM: session.distanceM,
+          }));
+      },
+    },
+
     shoes: {
       async byId(shoeId) {
         return clone(world.shoes.find((shoe) => shoe.id === shoeId) ?? null);

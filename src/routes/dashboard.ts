@@ -52,6 +52,8 @@ export function dashboardRoutes(app: FastifyInstance, deps: RouteDeps): void {
       });
     }
 
+    cards.sort((a, b) => b.totalLoad - a.totalLoad);
+
     return reply.code(200).send({ squadId, athletes: cards.length, cards });
   });
 }
