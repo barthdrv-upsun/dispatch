@@ -6,21 +6,29 @@ applications:
     build:
       flavor: none
     hooks:
+      # The build needs devDependencies: typescript, @types/node and drizzle-kit
+      # all live there, so `npm install --omit=dev` leaves `tsc` missing. Install
+      # everything, compile, then prune back to the runtime dependencies.
       build: |
         set -ex
-        npm install --omit=dev
+        npm install
         npm run build
+        # tsc emits .js and nothing else, so the SQL migrations and the drizzle
+        # journal next to them have to be carried into dist by hand.
+        cp -R src/db/migrations dist/src/db/migrations
+        npm prune --omit=dev
+      # Idempotent: drizzle records what it has already applied.
       deploy: |
         set -ex
-        npm run migrate
+        node dist/src/db/migrate.js
     web:
+      # `npm run dev` is tsx in watch mode, and tsx is a devDependency that the
+      # prune above removes. Run the compiled entrypoint instead.
       commands:
-        start: npm run dev
+        start: node dist/src/main.js
       locations:
         /:
-          root: public
           passthru: true
-          index: [index.html]
     relationships:
       database: {}
 
