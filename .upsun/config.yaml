@@ -27,14 +27,25 @@ applications:
         set -ex
         export DATABASE_URL="$(node dist/database-url.mjs)"
         node dist/src/db/migrate.js
+        # Demo environment: refill the synthetic squads so there is something
+        # to look at. This truncates, so it is behind a variable.
+        if [ "$SEED_ON_DEPLOY" = "1" ]; then node dist/src/seed/run.js; fi
     web:
       # `npm run dev` is tsx in watch mode, and tsx is a devDependency that the
       # prune above removes. Run the compiled entrypoint instead.
       commands:
         start: DATABASE_URL="$(node dist/database-url.mjs)" node dist/src/main.js
       locations:
+        # public/ is a static demo console. Anything that is not a file in
+        # there falls through to the API.
         /:
+          root: public
+          index: [index.html]
           passthru: true
+    variables:
+      env:
+        SEED_ON_DEPLOY: "1"
+
     relationships:
       database: {}
 

@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pacenote demo console</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --ink: #16191d;
+    --muted: #646b76;
+    --line: #dfe3e8;
+    --accent: #2f5d50;
+    --ok: #2f6f4f;
+    --bad: #a4402f;
+    --warn: #8a6320;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a;
+      --panel: #1b1f23;
+      --ink: #e8eaed;
+      --muted: #98a1ac;
+      --line: #2c3238;
+      --accent: #7fc0a9;
+      --ok: #79c398;
+      --bad: #e08d7c;
+      --warn: #d9b26a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  h1 { margin: 0 0 4px; font-size: 19px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; padding: 16px 24px; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+  select {
+    font: inherit; padding: 7px 10px; min-width: 240px;
+    border: 1px solid var(--line); border-radius: 7px;
+    background: var(--panel); color: var(--ink);
+  }
+  main { display: grid; grid-template-columns: minmax(240px, 320px) 1fr; gap: 16px; padding: 0 24px 32px; align-items: start; }
+  @media (max-width: 820px) { main { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+  .panel h2 { margin: 0; padding: 12px 16px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .body { padding: 14px 16px; }
+  ul.roster { list-style: none; margin: 0; padding: 6px; }
+  ul.roster li { margin: 0; }
+  ul.roster button {
+    width: 100%; text-align: left; font: inherit; cursor: pointer;
+    padding: 9px 11px; border: 0; border-radius: 7px; background: transparent; color: var(--ink);
+    display: flex; justify-content: space-between; gap: 8px; align-items: center;
+  }
+  ul.roster button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  ul.roster button[aria-current="true"] { background: color-mix(in srgb, var(--accent) 20%, transparent); font-weight: 600; }
+  .tag { font-size: 11px; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .tag.injured { color: var(--bad); border-color: currentColor; }
+  .tag.returning { color: var(--warn); border-color: currentColor; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .stat { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .stat .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .stat .v { font-size: 19px; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .rule { display: flex; gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .rule:last-child { border-bottom: 0; }
+  .rule code { font-weight: 700; font-size: 12px; min-width: 26px; }
+  .rule.ok code { color: var(--ok); }
+  .rule.bad code { color: var(--bad); }
+  .rule span { color: var(--muted); font-size: 13px; }
+  .bars { display: flex; gap: 6px; align-items: flex-end; height: 84px; margin-top: 6px; }
+  .bars div { flex: 1; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; opacity: 0.85; }
+  .spark { display: flex; gap: 1px; align-items: flex-end; height: 46px; }
+  .spark div { flex: 1; background: var(--accent); border-radius: 1px; min-height: 1px; opacity: 0.8; }
+  .axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .verdict { padding: 10px 12px; border-radius: 8px; border: 1px solid currentColor; font-size: 13px; }
+  .verdict.allowed { color: var(--ok); }
+  .verdict.blocked { color: var(--bad); }
+  .note { color: var(--muted); font-size: 12px; padding: 12px 24px 28px; }
+  .empty { color: var(--muted); padding: 24px 16px; text-align: center; font-size: 14px; }
+  h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 18px 0 8px; }
+  h3:first-child { margin-top: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Pacenote &mdash; demo console</h1>
+  <div class="sub">A static page over the live API. Nothing here is part of the service; it exists so the deployment can be looked at.</div>
+</header>
+
+<div class="controls">
+  <label>Acting as
+    <select id="persona"></select>
+  </label>
+  <label>Squad
+    <select id="squad"></select>
+  </label>
+</div>
+
+<main>
+  <section class="panel">
+    <h2>Roster</h2>
+    <div id="roster"><div class="empty">Loading&hellip;</div></div>
+  </section>
+  <section class="panel">
+    <h2>Athlete</h2>
+    <div class="body" id="detail"><div class="empty">Pick an athlete.</div></div>
+  </section>
+</main>
+
+<p class="note">
+  Seeded data is synthetic: invented names, <code>.invalid</code> addresses, invented dates of birth and injuries.
+</p>
+
+<script>
+const SQUADS = [
+  { id: '0000beef-0000-4000-8000-000000000001', name: 'Riverside Track Club (Europe/Berlin)' },
+  { id: '0000beef-0000-4000-8000-000000000002', name: 'Northgate Harriers (Europe/London)' },
+  { id: '0000beef-0000-4000-8000-000000000003', name: 'Southern Cross Runners (Pacific/Auckland)' },
+];
+
+const PERSONAS = [
+  { id: '0000beef-0000-4000-8000-000000000004', name: 'Rowan Casteel — head coach, Riverside' },
+  { id: '0000beef-0000-4000-8000-000000000005', name: 'Sunniva Berg — assistant coach, Riverside' },
+  { id: '0000beef-0000-4000-8000-000000000006', name: 'Tomasz Wieczorek — head coach, Northgate' },
+  { id: '0000beef-0000-4000-8000-000000000008', name: 'Viktor Halvorsen — head coach, Southern Cross' },
+  { id: '0000beef-0000-4000-8000-00000000000a', name: 'Yasmin Okoro — physio, all squads' },
+];
+
+const el = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let selected = null;
+
+async function api(path) {
+  const res = await fetch(path, { headers: { 'x-user-id': el('persona').value } });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(body.message || res.statusText);
+    err.status = res.status;
+    throw err;
+  }
+  return body;
+}
+
+function fill(select, items) {
+  select.innerHTML = items.map((i) => `<option value="${i.id}">${esc(i.name)}</option>`).join('');
+}
+
+async function loadRoster() {
+  const target = el('roster');
+  target.innerHTML = '<div class="empty">Loading&hellip;</div>';
+  try {
+    const data = await api(`/squads/${el('squad').value}/athletes`);
+    if (!data.athletes.length) {
+      target.innerHTML = '<div class="empty">No athletes in this squad.</div>';
+      return;
+    }
+    target.innerHTML = '<ul class="roster">' + data.athletes.map((a) => `
+      <li><button data-id="${a.id}" aria-current="${a.id === selected}">
+        <span>${esc(a.id.slice(-4))} &middot; ${esc(a.timezone)}</span>
+        <span class="tag ${esc(a.state)}">${esc(a.state)}</span>
+      </button></li>`).join('') + '</ul>';
+    target.querySelectorAll('button').forEach((b) =>
+      b.addEventListener('click', () => showAthlete(b.dataset.id)));
+    if (!data.athletes.some((a) => a.id === selected)) {
+      showAthlete(data.athletes[0].id);
+    }
+  } catch (err) {
+    target.innerHTML = `<div class="empty">${esc(err.message)}${
+      err.status === 401 ? '<br><br>If this says the user holds no roles, the database has not been seeded.' : ''
+    }</div>`;
+  }
+}
+
+function bars(values, labels) {
+  const peak = Math.max(1, ...values);
+  return `<div class="bars">${values.map((v) =>
+    `<div style="height:${Math.round((v / peak) * 100)}%" title="${v}"></div>`).join('')}</div>
+    <div class="axis"><span>${esc(labels[0])}</span><span>${esc(labels[labels.length - 1])}</span></div>`;
+}
+
+function spark(values) {
+  const peak = Math.max(1, ...values);
+  return `<div class="spark">${values.map((v) =>
+    `<div style="height:${Math.round((v / peak) * 100)}%" title="${v}"></div>`).join('')}</div>`;
+}
+
+async function showAthlete(id) {
+  selected = id;
+  document.querySelectorAll('ul.roster button').forEach((b) =>
+    b.setAttribute('aria-current', String(b.dataset.id === id)));
+  const target = el('detail');
+  target.innerHTML = '<div class="empty">Loading&hellip;</div>';
+
+  const [readiness, packet] = await Promise.all([
+    api(`/athletes/${id}/readiness`).catch((e) => ({ error: e.message })),
+    api(`/athletes/${id}/clearance-packet`).catch((e) => ({ error: e.message })),
+  ]);
+
+  if (readiness.error) {
+    target.innerHTML = `<div class="empty">${esc(readiness.error)}</div>`;
+    return;
+  }
+
+  const r = readiness.readiness;
+  const weeks = (readiness.weeks || []).slice().reverse();
+  let html = `
+    <div class="grid">
+      <div class="stat"><div class="k">Local day</div><div class="v">${esc(readiness.asOf)}</div></div>
+      <div class="stat"><div class="k">Acute : chronic</div><div class="v">${r.ratio.ratio}</div></div>
+      <div class="stat"><div class="k">Rest days this week</div><div class="v">${r.rest.restDays.length}</div></div>
+      <div class="stat"><div class="k">Goal race</div><div class="v">${readiness.goal ? esc(readiness.goal.raceDate) : '—'}</div></div>
+    </div>
+    <h3>Rules</h3>
+    ${r.findings.map((f) => `<div class="rule ${f.ok ? 'ok' : 'bad'}">
+        <code>${esc(f.rule)}</code><span>${esc(f.detail)}</span></div>`).join('')}`;
+
+  if (weeks.length) {
+    html += `<h3>Rolling weeks, km</h3>${bars(weeks.map((w) => w.volumeKm), weeks.map((w) => w.to))}`;
+  }
+
+  if (packet && !packet.error) {
+    const d = packet.decision;
+    html += `<h3>Return to run</h3>
+      <div class="verdict ${d.allowed ? 'allowed' : 'blocked'}">
+        ${d.allowed ? 'Cleared to run' : 'Not cleared'} &mdash; ${esc(d.reason)}
+      </div>
+      <h3>28 days of load</h3>${spark(packet.packet.days.map((day) => day.load))}
+      <div class="axis"><span>${esc(packet.packet.days[0].localDate)}</span><span>${esc(packet.asOf)}</span></div>`;
+  }
+
+  target.innerHTML = html;
+}
+
+fill(el('persona'), PERSONAS);
+fill(el('squad'), SQUADS);
+el('persona').addEventListener('change', loadRoster);
+el('squad').addEventListener('change', loadRoster);
+loadRoster();
+</script>
+</body>
+</html>
