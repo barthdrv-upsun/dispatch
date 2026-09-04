@@ -16,16 +16,21 @@ applications:
         # tsc emits .js and nothing else, so the SQL migrations and the drizzle
         # journal next to them have to be carried into dist by hand.
         cp -R src/db/migrations dist/src/db/migrations
+        # dist is what ships, so the credential translator rides along in it.
+        cp .upsun/database-url.mjs dist/database-url.mjs
         npm prune --omit=dev
-      # Idempotent: drizzle records what it has already applied.
+      # The app only knows DATABASE_URL; Upsun publishes the relationship in a
+      # different shape, so translate it here. Idempotent: drizzle records
+      # what it has already applied.
       deploy: |
         set -ex
+        export DATABASE_URL="$(node dist/database-url.mjs)"
         node dist/src/db/migrate.js
     web:
       # `npm run dev` is tsx in watch mode, and tsx is a devDependency that the
       # prune above removes. Run the compiled entrypoint instead.
       commands:
-        start: node dist/src/main.js
+        start: DATABASE_URL="$(node dist/database-url.mjs)" node dist/src/main.js
       locations:
         /:
           passthru: true
