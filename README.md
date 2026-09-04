@@ -15,8 +15,9 @@ npm run seed
 npm run dev
 ```
 
-You need Postgres 15 or newer with `pgcrypto` available for
-`gen_random_uuid()`.
+You need Node 24 or newer - npm 10, which Node 20 and 22 ship, cannot
+resolve the dev dependency tree - and Postgres 15 or newer with `pgcrypto`
+available for `gen_random_uuid()`.
 
 The tests do not need a database:
 
