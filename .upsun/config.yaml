@@ -16,8 +16,9 @@ applications:
         # tsc emits .js and nothing else, so the SQL migrations and the drizzle
         # journal next to them have to be carried into dist by hand.
         cp -R src/db/migrations dist/src/db/migrations
-        # dist is what ships, so the credential translator rides along in it.
-        cp .upsun/database-url.mjs dist/database-url.mjs
+        # .upsun/ is config: the platform consumes it and it is gone by the time the
+        # hook runs. dist is what ships, so the translator rides along in there.
+        cp scripts/database-url.mjs dist/database-url.mjs
         npm prune --omit=dev
       # The app only knows DATABASE_URL; Upsun publishes the relationship in a
       # different shape, so translate it here. Idempotent: drizzle records
